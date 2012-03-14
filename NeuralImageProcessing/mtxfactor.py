@@ -158,13 +158,13 @@ class RRI(object):
         
         if sparse_param2 > 0:
             #analysis
-            #norm = np.sqrt(np.sum(X ** 2, 1)).reshape((-1, 1)) + 1E-15
-            #occupation = np.sum(X / norm, 0)
+            norm = np.sqrt(np.sum(X ** 2, 1)).reshape((-1, 1)) + 1E-15
+            occupation = np.sum(X / norm, 0) - old / (np.sqrt(np.sum(old ** 2)) + 1E-15)
             
             #new
            
-            norm = np.mean(X, 1)
-            occupation = np.sum(X - norm.reshape((-1, 1)), 0) - (old - np.mean(old))
+            #norm = np.mean(X, 1)
+            #occupation = np.sum(X - norm.reshape((-1, 1)), 0) - (old - np.mean(old))
             #new end
             
             if np.sum(occupation[new_vec > 0] > 0):

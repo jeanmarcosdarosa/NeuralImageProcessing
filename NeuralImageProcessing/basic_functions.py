@@ -3,7 +3,8 @@ import numpy as np
 import sklearn.decomposition as sld
 from scipy.spatial.distance import pdist, squareform
 import scipy.ndimage as sn 
-from mtxfactor import stJADE, RRI
+import mtxfactor #import stJADE, RRI
+reload(mtxfactor)
 
 FILT = {'median': sn.filters.median_filter, 'gauss':sn.filters.gaussian_filter,
         'uniform':sn.filters.uniform_filter, 'erosion': sn.binary_erosion, 'dilation': sn.binary_dilation,
@@ -156,7 +157,7 @@ class stICA():
            
     def __call__(self, timeseries):
         
-        base, time = stJADE(timeseries.timecourses.T, **self.param)
+        base, time = mtxfactor.stJADE(timeseries.timecourses.T, **self.param)
         
         out = timeseries.copy()
         new_norm = np.diag(base[:, np.argmax(np.abs(base), 1)])
@@ -194,7 +195,7 @@ class NNMA():
         self.X = None
              
     def __call__(self, timeseries):
-        self.A, self.X, self.obj, count, converged = RRI()(timeseries.timecourses,
+        self.A, self.X, self.obj, count, converged = mtxfactor.RRI()(timeseries.timecourses,
                                               self.latents, A=self.A, X=self.X, verbose=1,
                                               maxcount=self.maxcount, shape=timeseries.shape, **self.param)
         out = timeseries.copy()      

@@ -435,10 +435,10 @@ class ObjectConcat():
         for ts in timeserieses:
             out = ts.copy()
             if self.unequalsample:           
-                print ts.label_sample
-                ind1 = [ts.label_sample.index(lab) for lab in common]
-                ind2 = [ts.label_sample.index(lab, ind1[i] + 1) for i, lab in enumerate(common)]
-                ind = ind1 + ind2
+                ind = [positions(lab, ts.label_sample)[:self.unequalsample + 1] for lab in common]
+                ind = sum(ind, [])
+                print len(ind)
+                print ts.num_objects, ts.num_trials, len(ts.label_sample), ts.samplepoints, ts.timepoints, ts.timecourses.shape
                 out.set_timecourses(ts.trial_shaped()[ind])
                 timecourses.append(out.timecourses)
             else:
@@ -450,7 +450,7 @@ class ObjectConcat():
         out.name = common_substr(name)
         out.label_objects = label_objects
         if self.unequalsample:
-            out.label_sample = list(common) * 2
+            out.label_sample = list(common) * self.unequalsample
         if self.unequalobj:
             out.shape = [ts.shape for ts in timeserieses]
         return out
@@ -496,3 +496,13 @@ def is_substr(find, data):
             return False
     return True
 
+def positions(target, source):
+    '''Produce all positions of target in source'''
+    pos = -1
+    out = []
+    try:
+        while True:
+            pos = source.index(target, pos + 1)
+            out.append(pos)
+    except ValueError:
+        return out

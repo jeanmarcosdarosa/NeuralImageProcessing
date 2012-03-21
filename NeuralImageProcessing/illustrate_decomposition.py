@@ -15,7 +15,7 @@ class VisualizeTimeseries(object):
     def __init__(self):
         self.fig = None
         self.axes = {'base':[], 'time':[]}
-        self.mappings = {'onetoone':self.onetoone, 'onetoall':self.onetoall}
+
     
     def oneaxes(self):
         self.fig = plt.figure(figsize=(15, 12))
@@ -54,7 +54,7 @@ class VisualizeTimeseries(object):
         for ax_ind in range(num_axes):
             for obj_ind in range(num_objects):
                 yield ax_ind, obj_ind
-    '''
+    
             
     def onetoall(self, num_axes, num_objects):
         for ax_ind in range(num_axes):
@@ -64,62 +64,34 @@ class VisualizeTimeseries(object):
         for ax_ind in range(num_axes):
             yield ax_ind, ax_ind  
               
+    '''
     
-    def contourfaces(self, where, how, timeseries):   
-        axes = self.axes[where]
-        for ax_ind, im_ind in self.mappings[how](len(axes), timeseries.samplepoints):
-            for imi in im_ind:  
+    def contourfaces(self, ax, im):
+        ax.contourf(im, [0.3, 1], colors=['r'], alpha=0.2)
 
-
-                axes[ax_ind].contourf(timeseries.shaped2D()[imi].squeeze(), [0.3, 1], colors=['r'], alpha=0.2)
-
-    def contour(self, where, how, timeseries):   
-        axes = self.axes[where]
-        for ax_ind, im_ind in self.mappings[how](len(axes), timeseries.samplepoints): 
-
-
-
-
-            for imi in im_ind: 
-
-
-
-
-
-
-                axes[ax_ind].contour(timeseries.shaped2D()[imi].squeeze(), [0.3], colors=['k'])
+    def contour(self, ax, im):   
+        ax.contour(im, [0.3], colors=['k'])
     
-    def overlay_image(self, where, how, timeseries):    
-        axes = self.axes[where]
-        for ax_ind, im_ind in self.mappings[how](len(axes), timeseries.samplepoints):
-            ax = axes[ax_ind]
-            im = timeseries.shaped2D()[im_ind]
-            im_rgba = plt.cm.jet(im / 2 + 0.5)
-            im_rgba[:, :, 3] = 0.8
-            im_rgba[np.abs(im) < 0.1, 3] = 0 
-            ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
+    def overlay_image(self, ax, im):    
+        im_rgba = plt.cm.jet(im / 2 + 0.5)
+        im_rgba[:, :, 3] = 0.8
+        im_rgba[np.abs(im) < 0.1, 3] = 0 
+        ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
     
-    def imshow(self, where, how, timeseries, title=False, colorbar=False):   
-        axes = self.axes[where]
-        for ax_ind, im_ind in self.mappings[how](len(axes), timeseries.samplepoints):
-            ax = axes[ax_ind]
-            im = timeseries.shaped2D()[im_ind].squeeze()
-            im = ax.imshow(im, aspect='equal', interpolation='nearest', cmap=plt.cm.jet) 
-            ax.set_axis_off()
-            if title:
-                ax.set_title(timeseries.label_sample[im_ind])
-            if colorbar:
-                self.fig.colorbar(im, ax=ax)
+    def imshow(self, ax, im, title=False, colorbar=False):   
+        im = ax.imshow(im, aspect='equal', interpolation='nearest', cmap=plt.cm.jet) 
+        ax.set_axis_off()
+        if title:
+            ax.set_title(title)
+        if colorbar:
+            self.fig.colorbar(im, ax=ax)
                        
-    def plot(self, where, how, timeseries):   
-        axes = self.axes[where]
-        for ax_ind, obj_ind in self.mappings[how](len(axes), timeseries.num_objects):
-            ax = axes[ax_ind]
-            ax.plot(timeseries.timecourses[:, obj_ind], '-')
-            ax.xticklabels = []
+    def plot(self, ax, time):   
+        ax.plot(time, '-')
+        ax.xticklabels = []
             
          
-    def add_labelshade(self, where, how, timeseries, rotate=True):     
+    def add_labelshade(self, ax, timeseries, rotate=True):     
         # create changing shade with changing label
         shade = []
         shade_color = 0
@@ -134,56 +106,41 @@ class VisualizeTimeseries(object):
         shade[np.hstack((np.array([0]), np.diff(shade))) == -1] = 1
         shade = np.hstack((shade, np.array([1]))) 
         
-        axes = self.axes[where]
-        for ax_ind, obj_ind in self.mappings[how](len(axes), timeseries.num_objects):
-            ax = axes[ax_ind]
-            axshade = collections.BrokenBarHCollection.span_where(
+
+
+        axshade = collections.BrokenBarHCollection.span_where(
                                 np.arange(len(shade) + 1) - 0.5,
                                 *ax.get_ylim(), where=shade > 0,
                                 facecolor='k', alpha=0.2)
-            ax.add_collection(axshade)
+        ax.add_collection(axshade)
  
-    def add_shade(self, where, how, timeseries, timepoints):     
+    def add_shade(self, ax, timeseries, timepoints):     
         # create changing shade according to binary timseries   
         shade = np.outer(np.array(timeseries.timecourses.squeeze().astype('int')), np.ones(timepoints)).flatten()
         shade[np.hstack((np.array([0]), np.diff(shade))) == -1] = 1
-        shade = np.hstack((shade, np.array([1]))) 
-       
-        axes = self.axes[where]
-        for ax_ind, obj_ind in self.mappings[how](len(axes), timeseries.num_objects):
-            ax = axes[ax_ind]
-            axshade = collections.BrokenBarHCollection.span_where(
+        shade = np.hstack((shade, np.array([1])))       
+        axshade = collections.BrokenBarHCollection.span_where(
                                 np.arange(len(shade) + 1) - 0.5,
                                 *ax.get_ylim(), where=shade > 0,
                                 facecolor='g', alpha=0.2)
-            ax.add_collection(axshade)
+        ax.add_collection(axshade)
         
-    def add_samplelabel(self, where, timeseries, rotation='0', toppos=False):      
-            for ax_ind in where:
-                ax = self.axes['time'][ax_ind]
-                ax.set_xticks(range(0, timeseries.samplepoints, timeseries.timepoints))
-                ax.set_xticklabels(timeseries.label_sample)
-            
-                for tick in ax.xaxis.iter_ticks():
-                    tick[0].label2On = toppos
-                    tick[0].label1On = not(toppos)
-                    tick[0].label2.set_rotation(rotation)
-                    tick[0].label2.set_ha('left')
-                    tick[0].label2.set_size('x-small')
-                    tick[0].label2.set_stretch('extra-condensed')
-                    tick[0].label2.set_family('sans-serif')
+    def add_samplelabel(self, ax, timeseries, rotation='0', toppos=False):      
+        ax.set_xticks(range(0, timeseries.samplepoints, timeseries.timepoints))
+        ax.set_xticklabels(timeseries.label_sample)
+        
+        for tick in ax.xaxis.iter_ticks():
+            tick[0].label2On = toppos
+            tick[0].label1On = not(toppos)
+            tick[0].label2.set_rotation(rotation)
+            tick[0].label2.set_ha('left')
+            tick[0].label2.set_size('x-small')
+            tick[0].label2.set_stretch('extra-condensed')
+            tick[0].label2.set_family('sans-serif')
 
-    def add_violine(self, where, how, timeseries, color='b', rotation='0'):   
-        axes = self.axes[where]
-        for ax_ind, obj_ind in self.mappings[how](len(axes), timeseries.num_trials):
-            ax = axes[ax_ind]
-            if type(timeseries.timecourses) == type([]):
-                violin_plot(ax, [timeseries.timecourses[i] for i in  obj_ind], range(len(obj_ind)), color)
-            else:
-                violin_plot(ax, timeseries.timecourses[:, obj_ind], range(len(obj_ind)), color)
-            ax.set_xlim((-0.5, len(obj_ind) - 0.5))
-            ax.set_xticks(range(len(obj_ind)))
-            ax.set_xticklabels([timeseries.label_sample[i] for i in obj_ind], rotation=rotation)
+    def add_violine(self, ax, distributionlist, color='b', rotation='0'):   
+        violin_plot(ax, distributionlist, range(len(distributionlist)), color)
+        ax.set_xlim((-0.5, len(distributionlist) - 0.5))
             
                     
     def add_axescolor(self, where, how, timeseries, ec='g', lw=2):

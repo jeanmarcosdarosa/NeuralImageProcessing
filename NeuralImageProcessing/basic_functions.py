@@ -435,7 +435,7 @@ class ObjectConcat():
         for ts in timeserieses:
             out = ts.copy()
             if self.unequalsample:           
-                ind = [positions(lab, ts.label_sample)[:self.unequalsample + 1] for lab in common]
+                ind = [positions(lab, ts.label_sample)[:self.unequalsample] for lab in common]
                 ind = sum(ind, [])
                 print len(ind)
                 print ts.num_objects, ts.num_trials, len(ts.label_sample), ts.samplepoints, ts.timepoints, ts.timecourses.shape

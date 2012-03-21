@@ -2,7 +2,7 @@ from pipeline import TimeSeries
 import numpy as np
 import sklearn.decomposition as sld
 from scipy.spatial.distance import pdist, squareform
-import scipy.ndimage as sn 
+import scipy.ndimage as sn
 import mtxfactor #import stJADE, RRI
 reload(mtxfactor)
 
@@ -14,18 +14,18 @@ FILTARG = {'median': lambda value: {'size':value}, 'gauss':lambda value: {'sigma
            'erosion':lambda value: {'structure':sn.iterate_structure(sn.generate_binary_structure(2, 1), value)},
            'dilation':lambda value: {'structure':sn.iterate_structure(sn.generate_binary_structure(2, 1), value)},
            'closing':lambda value: {'structure':sn.iterate_structure(sn.generate_binary_structure(2, 1), value)}
-           }       
-            
+           }
+
 class Filter():
     ''' filter series with filterop in 2D'''
-    
+
     def __init__(self, filterop, extend, downscale=1):
         self.downscale = downscale
         self.filterop = FILT[filterop]
         self.args = FILTARG[filterop](extend)
-        
-               
-    def __call__(self, timeseries):    
+
+
+    def __call__(self, timeseries):
         filtered_images = []
         for image in timeseries.shaped2D():
             im = self.filterop(image, **self.args)
@@ -40,10 +40,10 @@ class Filter():
 
 class CutOut():
     ''' cuts out images of a series from range[0] to range[1]'''
-    
+
     def __init__(self, cut_range):
         self.cut_range = cut_range
-      
+
     def __call__(self, timeseries):
         image_cut = timeseries.copy()
         image_cut.set_timecourses(image_cut.trial_shaped()[:, self.cut_range[0]:self.cut_range[1]])
@@ -51,10 +51,10 @@ class CutOut():
 
 class TrialMean():
     ''' splits each trial in equal parts and calculates their means'''
-    
+
     def __init__(self, parts=1):
         self.parts = parts
-       
+
     def __call__(self, timeseries):
         splits = np.vsplit(timeseries.timecourses, self.parts * timeseries.num_trials)
         averaged_im = [np.mean(im, 0) for im in splits]
@@ -64,11 +64,11 @@ class TrialMean():
 
 class RelativeChange():
     ''' gives relative change of trials to base_image '''
-    
+
     def __init__(self):
         pass
-        
-    def __call__(self, timeseries, baseseries):    
+
+    def __call__(self, timeseries, baseseries):
         relative_change = timeseries.copy()
         relative_change.set_timecourses((timeseries.trial_shaped() - baseseries.trial_shaped())
                            / baseseries.trial_shaped())
@@ -76,20 +76,20 @@ class RelativeChange():
 
 class Combine():
     ''' combines two imageseries by cominefct '''
-    
+
     def __init__(self, combine_fct):
         self.combine_fct = combine_fct
-                    
-    def __call__(self, timeseries1, timeseries2):    
+
+    def __call__(self, timeseries1, timeseries2):
         change = timeseries1.copy()
         change.timecourses = self.combine_fct(timeseries1.timecourses, timeseries2.timecourses)
         return change
 
 class PCA():
-    
+
     def __init__(self, variance=None):
         self.variance = variance
-    
+
     def __call__(self, timeseries):
         self.pca = sld.PCA(n_components=self.variance)
         self.pca.fit(timeseries.timecourses)
@@ -102,47 +102,47 @@ class PCA():
         out.base = TimeSeries(self.pca.components_, shape=timeseries.shape, name='base',
                               label_sample=out.label_objects)
         return out
-        
+
 class sICA():
-    
+
     def __init__(self, variance=None, latent_series=False):
         self.variance = variance
         self.latent_series = latent_series
-           
+
     def __call__(self, timeseries):
-        self.pca = sld.PCA(n_components=self.variance)      
+        self.pca = sld.PCA(n_components=self.variance)
         if self.latent_series:
             base = self.pca.fit_transform(timeseries.base.timecourses.T)
             time = np.dot(self.pca.components_, timeseries.timecourses.T)
         else:
             base = self.pca.fit_transform(timeseries.timecourses.T)
             time = self.pca.components_
-        
-        
+
+
         normed_base = base / np.sqrt(self.pca.explained_variance_)
         normed_time = time * np.sqrt(self.pca.explained_variance_.reshape((-1, 1)))
- 
+
         self.ica = sld.FastICA(whiten=False)
         self.ica.fit(normed_base)
-        
+
 
         out = timeseries.copy()
         base = self.ica.components_.T
         new_norm = np.diag(base[:, np.argmax(np.abs(base), 1)])
         base /= new_norm.reshape((-1, 1))
-        
+
         time = self.ica.transform(normed_time.T)
         time *= new_norm
-        
+
         timesign = np.sign(np.sum(time, 0))
         time *= timesign
         base *= timesign.reshape((-1, 1))
-        
+
         out.timecourses = time
         out.label_objects = ['mode' + str(i) for i in range(base.shape[0])]
         out.shape = (len(out.label_objects),)
         out.typ = 'latent_series'
-        out.name += '_sica'  
+        out.name += '_sica'
         out.base = TimeSeries(base, shape=timeseries.shape, name=out.name,
                               label_sample=out.label_objects)
         if self.latent_series:
@@ -150,40 +150,40 @@ class sICA():
         return out
 
 class stICA():
-    
+
     def __init__(self, variance=None, param={}):
         param['latents'] = variance
         self.param = param
-           
+
     def __call__(self, timeseries):
-        
+
         base, time = mtxfactor.stJADE(timeseries.timecourses.T, **self.param)
-        
+
         out = timeseries.copy()
         new_norm = np.diag(base[:, np.argmax(np.abs(base), 1)])
         base /= new_norm.reshape((-1, 1))
-        
+
         time = time.T
         time *= new_norm
-        
+
         #timesign = np.sign(np.sum(time[np.abs(time) > 0.05], 0))
         print time.shape
         timesign = np.sign(np.diag(time[np.argmax(np.abs(time), 0)]))
         time *= timesign
         base *= timesign.reshape((-1, 1))
-        
+
         out.timecourses = time
         out.label_objects = ['mode' + str(i) for i in range(base.shape[0])]
         out.shape = (len(out.label_objects),)
         out.typ = 'latent_series'
-        out.name += '_stica'  
+        out.name += '_stica'
         out.base = TimeSeries(base, shape=timeseries.shape, name=out.name,
                               label_sample=out.label_objects)
-        
+
         return out
-    
+
 class NNMA():
-    
+
     def __init__(self, latents=100, maxcount=100, param=None):
         self.latents = latents
         self.maxcount = maxcount
@@ -193,12 +193,12 @@ class NNMA():
             self.param = param
         self.A = None
         self.X = None
-             
+
     def __call__(self, timeseries):
         self.A, self.X, self.obj, count, converged = mtxfactor.RRI()(timeseries.timecourses,
                                               self.latents, A=self.A, X=self.X, verbose=1,
                                               maxcount=self.maxcount, shape=timeseries.shape, **self.param)
-        out = timeseries.copy()      
+        out = timeseries.copy()
 
         base = self.X
         new_norm = np.diag(base[:, np.argmax(np.abs(base), 1)])
@@ -208,7 +208,7 @@ class NNMA():
 
         out.label_objects = ['mode' + str(i) for i in range(base.shape[0])]
         out.shape = (len(out.label_objects),)
-        out.typ = 'latent_series'  
+        out.typ = 'latent_series'
         out.name += '_nnma'
         out.base = TimeSeries(base, shape=timeseries.shape, name=out.name,
                               label_sample=out.label_objects)
@@ -245,11 +245,11 @@ class SampleSimilarity():
                 mask[label_index] = True
         out = timeseries.copy()
         out.timecourses = mask
-        return out       
+        return out
 
 class SampleSimilarityPure():
     """calculate similarity of samples with the same Labels
-    
+
     return dictionaries with interlabel and crosslabel distances
     """
 
@@ -264,32 +264,32 @@ class SampleSimilarityPure():
             temp = squareform(pdist(timeseries.timecourses, self.metric))
             distancecross[label] = temp[label_index][:, np.logical_not(label_index)]
             distanceself[label] = pdist(timeseries.timecourses[label_index], self.metric)
-        return distanceself, distancecross 
+        return distanceself, distancecross
 
 class SelectTrials():
     ''' selects trials bases on mask'''
-    
-     
+
+
     def __init__(self):
         pass
-        
+
     def __call__(self, timeseries, mask):
         mask = mask.timecourses
         selected_timecourses = timeseries.trial_shaped()[mask]
         out = timeseries.copy()
         out.set_timecourses(selected_timecourses)
         out.label_sample = [out.label_sample[i] for i in np.where(mask)[0]]
-        return out 
+        return out
 
 class CalcStimulusDrive():
     ''' creates pseudo trial and calculates distance metric between them (for each object)'''
-    
+
     def __init__(self, metric='correlation'):
         self.metric = metric
-    
+
     def __call__(self, timeseries):
         labels = timeseries.label_sample
-        
+
         stim_set = set(labels)
         # create dictionary with key: stimulus and value: trial where stimulus was given
         stim_pos = {}
@@ -301,9 +301,9 @@ class CalcStimulusDrive():
         for i in range(min_len):
             indices.append([j[i] for j in stim_pos.values()])
         # create pseudo-trial timecourses
-        trial_timecourses = np.array([timeseries.trial_shaped()[i].reshape(-1, timeseries.num_objects) for i in indices])    
+        trial_timecourses = np.array([timeseries.trial_shaped()[i].reshape(-1, timeseries.num_objects) for i in indices])
         # calculate correlation of pseudo-trials, aka stimulus dependency
-        cor = [] 
+        cor = []
         for object_num in range(timeseries.num_objects):
             dists = pdist(trial_timecourses[:, :, object_num] + 1E-12 * np.random.randn(*trial_timecourses[:, :, object_num].shape), self.metric)
             er = np.isnan(dists)
@@ -314,49 +314,49 @@ class CalcStimulusDrive():
         out = timeseries.copy()
         out.timecourses = np.array(cor).reshape((1, -1))
         out.label_sample = [out.name]
-        return out 
+        return out
 
 class SelectModes():
     ''' select objects which lie under the threshold in the filtervalues '''
-         
+
     def __init__(self, threshold):
         self.threshold = threshold
-        
+
     def __call__(self, timeseries, filtervalues):
         mask = filtervalues.timecourses.squeeze() < self.threshold
         selected_timecourses = timeseries.timecourses[:, mask]
         out = timeseries.copy()
-        out.timecourses = selected_timecourses     
+        out.timecourses = selected_timecourses
         out.label_objects = [out.label_objects[i] for i in np.where(mask)[0]]
         out.shape = (len(out.label_objects),)
         if timeseries.typ == 'latent_series':
             out.base.timecourses = out.base.timecourses[mask]
             out.base.label_sample = out.label_objects
-        
+
         return out
 
 class SingleSampleResponse():
-    ''' calculates a single response for each label 
-    
-    options: 
+    ''' calculates a single response for each label
+
+    options:
     mean -> the mean of all samples
     best -> the strongest response
-    attetention: reorders labels 
+    attetention: reorders labels
     '''
-    
-    
+
+
     def __init__(self, method='mean'):
         self.method = 'mean'
-        
+
     def __call__(self, timeseries):
         timecourses = timeseries.trial_shaped()
         labels = timeseries.label_sample
-        label_set = list(set(labels))       
+        label_set = list(set(labels))
         new_labels, new_timecourses = [], []
         for label in label_set:
             label_index = [i for i, tmp_label in enumerate(labels) if tmp_label == label]
             if self.method == 'mean':
-                single_timecourse = np.mean(timecourses[label_index], 0) 
+                single_timecourse = np.mean(timecourses[label_index], 0)
             elif self.method == 'best':
                 #select trial with most signal
                 besttime = np.argmax([np.sum(np.abs(timecourses[l_ind])) for l_ind in label_index])
@@ -364,18 +364,18 @@ class SingleSampleResponse():
             new_labels.append(label)
             new_timecourses.append(single_timecourse)
         new_timecourses = np.vstack(new_timecourses)
-    
+
         out = timeseries.copy()
         out.timecourses = new_timecourses
         out.label_sample = new_labels
-        return out    
+        return out
 
 class SortBySamplename():
     ''' sort timeseries by samplename'''
-    
+
     def __init__(self):
         pass
-        
+
     def __call__(self, timeseries):
         timecourses = timeseries.trial_shaped()
         labels = timeseries.label_sample
@@ -384,16 +384,16 @@ class SortBySamplename():
         out = timeseries.copy()
         out.set_timecourses(timecourses)
         out.label_sample = [labels[i] for i in label_ind]
-        return out  
+        return out
 
 class Distance():
     ''' calculate distance between objects/samples '''
-    
+
     def __init__(self, metric='correlation', direction='temporal', onlymin=False):
         self.metric = metric
         self.direction = direction
         self.onlymin = onlymin
-        
+
     def __call__(self, timeseries):
         if self.direction == 'temporal':
             dist = pdist(timeseries.timecourses.T, self.metric)
@@ -405,36 +405,36 @@ class Distance():
             dist = np.min(squareform(dist) + np.diag(np.ones(len(labels))), 0)
             new_labels = labels
         else:
-            new_labels = reduce(lambda x, y:x + y, [[labels[i] + ':' + labels[j] for i in range(j + 1, len(labels))] for j in range(len(labels))])          
+            new_labels = reduce(lambda x, y:x + y, [[labels[i] + ':' + labels[j] for i in range(j + 1, len(labels))] for j in range(len(labels))])
         out = timeseries.copy()
         out.timecourses = dist.reshape((1, -1))
         out.label_objects = new_labels
         out.shape = (len(new_labels),)
         out.label_sample = [timeseries.name]
-        return out    
+        return out
 
 class ObjectConcat():
     ''' concat timeseries objects
-    
+
     options:
-    unequalsample=False, if integer n samples are reduced to common labels (each label n-times) 
+    unequalsample=False, if integer n samples are reduced to common labels (each label n-times)
     unequalobj=False, if True stores the shape of each object as in out.shape as list
     '''
-    
+
     def __init__(self, unequalsample=False, unequalobj=False):
         self.unequalsample = unequalsample
         self.unequalobj = unequalobj
-        
+
     def __call__(self, timeserieses):
         timecourses, name, label_objects = [], [], []
 
-        
+
         if self.unequalsample:
             common = list(set(reduce(lambda x, y: set(x).intersection(y), [ts.label_sample for ts in timeserieses])))
-            common.sort()          
+            common.sort()
         for ts in timeserieses:
             out = ts.copy()
-            if self.unequalsample:           
+            if self.unequalsample:
                 ind = [positions(lab, ts.label_sample)[:self.unequalsample] for lab in common]
                 ind = sum(ind, [])
                 print len(ind)
@@ -444,24 +444,24 @@ class ObjectConcat():
             else:
                 assert ts.label_sample == out.label_sample, 'samples do not match'
                 timecourses.append(ts.timecourses)
-            label_objects += [ts.name + '_' + lab for lab in ts.label_objects]   
+            label_objects += [ts.name + '_' + lab for lab in ts.label_objects]
             name.append(ts.name)
         out.timecourses = np.hstack(timecourses)
         out.name = common_substr(name)
         out.label_objects = label_objects
         if self.unequalsample:
-            out.label_sample = list(common) * self.unequalsample
+            out.label_sample = sum([[tmp] * self.unequalsample for tmp in common], [])
         if self.unequalobj:
             out.shape = [ts.shape for ts in timeserieses]
         return out
-            
+
 class SampleConcat():
     ''' concat timeserieses timecourses'''
 
-    
+
     def __init__(self, listout=False):
         self.listout = listout
-    
+
     def __call__(self, timeserieses):
         out = timeserieses[0].copy()
         out.timecourses, out.name, out.label_sample = [], [], []
@@ -470,13 +470,13 @@ class SampleConcat():
                 assert ts.label_objects == out.label_objects, 'objects do not match'
             out.timecourses.append(ts.timecourses)
             out.label_sample += ts.label_sample
-            out.name.append(ts.name) 
+            out.name.append(ts.name)
         if not(self.listout):
             out.timecourses = np.vstack(out.timecourses)
         out.name = common_substr(out.name)
         return out
 # helper functions
-    
+
 def common_substr(data):
     substr = ''
     if len(data) > 1 and len(data[0]) > 0:

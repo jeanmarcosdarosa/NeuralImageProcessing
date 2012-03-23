@@ -455,6 +455,35 @@ class ObjectConcat():
             out.shape = [ts.shape for ts in timeserieses]
         return out
 
+class ObjectScrambledConcat():
+    ''' concat timeseries objects'''
+
+    def __init__(self, repititions, method='simple'):
+        self.repititions = repititions
+        method_dict = {'simple': scramble_simple, 'three':scramble_three}
+        self.scrambling = method_dict[method]
+
+    def __call__(self, timeserieses):
+        timecourses, name, label_objects = [], [], []
+
+        common = list(set(reduce(lambda x, y: set(x).intersection(y), [ts.label_sample for ts in timeserieses])))
+        common.sort()
+        for ts_ind, ts in enumerate(timeserieses):
+            out = ts.copy()
+            ind = [self.scrambling(positions(lab, ts.label_sample)[:2], self.repititions, ts_ind) for lab in common]
+            ind = sum(ind, [])
+            out.set_timecourses(ts.trial_shaped()[ind])
+            timecourses.append(out.timecourses)
+            label_objects += [ts.name + '_' + lab for lab in ts.label_objects]
+            name.append(ts.name)
+        
+        out.timecourses = np.hstack(timecourses)
+        out.name = common_substr(name)
+        out.label_objects = label_objects
+        out.label_sample = sum([[tmp] * self.repititions for tmp in common], [])
+        out.shape = [ts.shape for ts in timeserieses]
+        return out  
+
 class SampleConcat():
     ''' concat timeserieses timecourses'''
 
@@ -506,3 +535,14 @@ def positions(target, source):
             out.append(pos)
     except ValueError:
         return out
+
+def scramble_simple(inds , leng, pos):
+    extended_list = [inds[0]] * np.ceil(len) + [inds[1]] * np.floor(leng)
+    shifted_list = extended_list[pos:] + extended_list[:pos]
+    return shifted_list
+
+def scramble_three(inds, leng, pos):
+    if pos < 3:
+        return scramble_simple(inds, leng, pos)
+    elif pos == 3:
+        return [inds[1]] * leng  

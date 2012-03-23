@@ -537,7 +537,8 @@ def positions(target, source):
         return out
 
 def scramble_simple(inds , leng, pos):
-    extended_list = [inds[0]] * np.ceil(len) + [inds[1]] * np.floor(leng)
+    extended_list = [inds[0]] * np.ceil(leng / 2.) + [inds[1]] * np.floor(leng / 2.)
+    
     shifted_list = extended_list[pos:] + extended_list[:pos]
     return shifted_list
 

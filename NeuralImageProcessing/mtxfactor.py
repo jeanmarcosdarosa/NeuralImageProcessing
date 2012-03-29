@@ -60,12 +60,12 @@ class RRI(object):
         
 
         A, X = self.init_factors(Y, k, A, X, Xpart, shape)
-
-        self.S = (np.diag(np.ones(X.shape[1] - 1), 1) + np.diag(np.ones(X.shape[1] - 1), -1) + np.diag(np.ones(X.shape[1] - shape[1]), shape[1]) + np.diag(np.ones(X.shape[1] - shape[1]), -shape[1]))
-        for j in range(shape[0] - 1):
-            pos = shape[1] * (j + 1)
-            self.S[pos - 1, pos] = 0
-            self.S[pos, pos - 1] = 0
+        if param['smoothness'] > 0:
+            self.S = (np.diag(np.ones(X.shape[1] - 1), 1) + np.diag(np.ones(X.shape[1] - 1), -1) + np.diag(np.ones(X.shape[1] - shape[1]), shape[1]) + np.diag(np.ones(X.shape[1] - shape[1]), -shape[1]))
+            for j in range(shape[0] - 1):
+                pos = shape[1] * (j + 1)
+                self.S[pos - 1, pos] = 0
+                self.S[pos, pos - 1] = 0
         #self.S[0,1]=2
         #self.S[-1,-2]=2
         
@@ -167,11 +167,11 @@ class RRI(object):
             #occupation = np.sum(X - norm.reshape((-1, 1)), 0) - (old - np.mean(old))
             #new end
             
-            if np.sum(occupation[new_vec > 0] > 0):
+            #if np.sum(occupation[new_vec > 0] > 0):
                 # analysis: new_vec -= sparse_param2 * (occupation - old / (np.sqrt(np.sum(old ** 2)) + 1E-15))       
                 
                 # new:
-                new_vec -= sparse_param2 * occupation 
+            new_vec -= sparse_param2 * occupation 
                 
         if smoothness > 0:
             new_vec += smoothness * np.dot(self.S, old * np.max(new_vec))

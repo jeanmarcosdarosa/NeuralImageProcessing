@@ -11,23 +11,23 @@ import pylab as plt
 from scipy.stats import gaussian_kde
 
 class VisualizeTimeseries(object):
-    
+
     def __init__(self):
         self.fig = None
         self.axes = {'base':[], 'time':[]}
 
-    
+
     def oneaxes(self):
         self.fig = plt.figure(figsize=(15, 12))
         ax = self.fig.add_subplot(111)
         self.axes['base'].append(ax)
         self.axes['time'].append(ax)
 
-    
+
     def base_and_time(self, num_objects):
         if not(self.fig):
             self.fig = plt.figure(figsize=(20, 13))
-        
+
         height = 0.9 / num_objects
         for i in range(num_objects):
             #create timeaxes
@@ -38,74 +38,74 @@ class VisualizeTimeseries(object):
             ax = self.fig.add_axes([0.05, height * i + 0.05, min(height, 0.15), min(height, 0.15)])
             ax.set_axis_off()
             self.axes['base'].append(ax)
-    
+
     def subplot(self, num_objects):
         if not(self.fig):
             self.fig = plt.figure(figsize=(13, 13))
         subplot_dim1 = np.ceil(np.sqrt(num_objects))
-        subplot_dim2 = np.ceil(num_objects / subplot_dim1)                
+        subplot_dim2 = np.ceil(num_objects / subplot_dim1)
         for axind in xrange(num_objects):
             axhandle = self.fig.add_subplot(subplot_dim1, subplot_dim2, axind + 1)
             self.axes['base'].append(axhandle)
-    
+
 
     '''
     def alltoall(self, num_axes, num_objects):
         for ax_ind in range(num_axes):
             for obj_ind in range(num_objects):
                 yield ax_ind, obj_ind
-    
-            
+
+
     def onetoall(self, num_axes, num_objects):
         for ax_ind in range(num_axes):
             yield ax_ind, range(num_objects)
-    
+
     def onetoone(self, num_axes, num_objects):
         for ax_ind in range(num_axes):
-            yield ax_ind, ax_ind  
-              
+            yield ax_ind, ax_ind
+
     '''
-    
+
     def contourfaces(self, ax, im):
         ax.contourf(im, [0.3, 1], colors=['r'], alpha=0.2)
 
-    def contour(self, ax, im):   
+    def contour(self, ax, im):
         ax.contour(im, [0.3], colors=['k'])
-    
-    def overlay_image(self, ax, im):    
+
+    def overlay_image(self, ax, im):
         im_rgba = plt.cm.jet(im / 2 + 0.5)
         im_rgba[:, :, 3] = 0.8
-        im_rgba[np.abs(im) < 0.1, 3] = 0 
+        im_rgba[np.abs(im) < 0.1, 3] = 0
         ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
-    
-    def imshow(self, ax, im, title=False, colorbar=False):   
-        im = ax.imshow(im, aspect='equal', interpolation='nearest', cmap=plt.cm.jet) 
+
+    def imshow(self, ax, im, title=False, colorbar=False):
+        im = ax.imshow(im, aspect='equal', interpolation='nearest', cmap=plt.cm.jet)
         ax.set_axis_off()
         if title:
             ax.set_title(title)
         if colorbar:
             self.fig.colorbar(im, ax=ax)
-                       
-    def plot(self, ax, time):   
-        ax.plot(time, '-')
+
+    def plot(self, ax, time, **kwargs):
+        ax.plot(time, '-', **kwargs)
         ax.xticklabels = []
-            
-         
-    def add_labelshade(self, ax, timeseries, rotate=True):     
+
+
+    def add_labelshade(self, ax, timeseries, rotate=True):
         # create changing shade with changing label
         shade = []
         shade_color = 0
-        labels = timeseries.label_sample                  
+        labels = timeseries.label_sample
         reference_label = labels[0]
         for label in labels:
             if not(label == reference_label):
                 reference_label = label
                 shade_color = 1 - shade_color
-            shade.append(shade_color)      
+            shade.append(shade_color)
         shade = np.outer(np.array(shade), np.ones((timeseries.timepoints))).flatten()
         shade[np.hstack((np.array([0]), np.diff(shade))) == -1] = 1
-        shade = np.hstack((shade, np.array([1]))) 
-        
+        shade = np.hstack((shade, np.array([1])))
+
 
 
         axshade = collections.BrokenBarHCollection.span_where(
@@ -113,22 +113,25 @@ class VisualizeTimeseries(object):
                                 *ax.get_ylim(), where=shade > 0,
                                 facecolor='k', alpha=0.2)
         ax.add_collection(axshade)
- 
-    def add_shade(self, ax, timeseries, timepoints):     
-        # create changing shade according to binary timseries   
+
+    def add_onsets(self, ax, timeseries, stimuli_offset):
+        ax.set_xticks(np.arange(timeseries.num_trials) * timeseries.timepoints + stimuli_offset)
+
+    def add_shade(self, ax, timeseries, timepoints):
+        # create changing shade according to binary timseries
         shade = np.outer(np.array(timeseries.timecourses.squeeze().astype('int')), np.ones(timepoints)).flatten()
         shade[np.hstack((np.array([0]), np.diff(shade))) == -1] = 1
-        shade = np.hstack((shade, np.array([1])))       
+        shade = np.hstack((shade, np.array([1])))
         axshade = collections.BrokenBarHCollection.span_where(
                                 np.arange(len(shade) + 1) - 0.5,
                                 *ax.get_ylim(), where=shade > 0,
                                 facecolor='g', alpha=0.2)
         ax.add_collection(axshade)
-        
-    def add_samplelabel(self, ax, timeseries, rotation='0', toppos=False):      
+
+    def add_samplelabel(self, ax, timeseries, rotation='0', toppos=False):
         ax.set_xticks(range(0, timeseries.samplepoints, timeseries.timepoints))
         ax.set_xticklabels(timeseries.label_sample)
-        
+
         for tick in ax.xaxis.iter_ticks():
             tick[0].label2On = toppos
             tick[0].label1On = not(toppos)
@@ -138,11 +141,11 @@ class VisualizeTimeseries(object):
             tick[0].label2.set_stretch('extra-condensed')
             tick[0].label2.set_family('sans-serif')
 
-    def add_violine(self, ax, distributionlist, color='b', rotation='0'):   
+    def add_violine(self, ax, distributionlist, color='b', rotation='0'):
         violin_plot(ax, distributionlist, range(len(distributionlist)), color)
         ax.set_xlim((-0.5, len(distributionlist) - 0.5))
-            
-                    
+
+
     def add_axescolor(self, where, how, timeseries, ec='g', lw=2):
         axes = self.axes[where]
         for ax_ind, obj_ind in self.mappings[how](len(axes), timeseries.num_objects):
@@ -163,7 +166,7 @@ def violin_plot(ax, data, pos, color):
     for d, p in zip(data, pos):
         #where_nan = np.isnan(d)
         #where_inf = np.isinf(d)
-        #print 'number of nans/infs: ', np.sum(where_nan), np.sum(where_inf) 
+        #print 'number of nans/infs: ', np.sum(where_nan), np.sum(where_inf)
         #d = d[np.logical_not(where_nan * where_inf)]
         k = gaussian_kde(d) #calculates the kernel density
         m = k.dataset.min() #lower bound of violin
@@ -176,24 +179,24 @@ def violin_plot(ax, data, pos, color):
 
 '''
 def initmouseob(path='/media/Iomega_HDD/Experiments/Messungen/111210sph/',
-           dateikenn='_nnma'):    
-    
+           dateikenn='_nnma'):
+
     """ ======== load in decomposition ======== """
     measID = path.strip('/').split('/')[-1]
     db = dataimport.instantJChemInterface()
-                 
+
     base = np.load(path + 'base' + dateikenn + '.npy')
     norm = np.max(base, 1)
     base /= norm.reshape((-1, 1))
     timecourse = np.load(path + 'time' + dateikenn + '.npy') * norm
-    
-    shape = np.load(path + 'shape.npy')   
+
+    shape = np.load(path + 'shape.npy')
     bg = np.asarray(Image.open(path + 'bg.png').convert(mode='L').resize(
                                                     (shape[1], shape[0])))
 
     namelist = pickle.load(open(path + 'ids.pik'))
     names = db.make_table_dict('cd_id', ['Name'], 'MOLECULE_PROPERTIES')
-    labels = []   
+    labels = []
     for label in namelist:
         name_parts = label.split('_')
         odor_name = names[int(name_parts[0])][0][0]
@@ -202,24 +205,24 @@ def initmouseob(path='/media/Iomega_HDD/Experiments/Messungen/111210sph/',
         if len(name_parts) > 3:
             odor_name += name_parts[3].strip()
         labels.append(odor_name)
-    
+
     decomposition = ip.TimeSeries(timecourse, name=[measID], shape=shape,
                  typ='Decomposition', label_sample=labels)
     decomposition.base = base
     decomposition.bg = bg
-    
+
     """ ======== load in data ======== """
     preprocessed_timecourse = np.load(path + 'data.npy')
     preprocessed = ip.TimeSeries(preprocessed_timecourse, name=[measID],
                   shape=shape, typ='Timeseries', label_sample=labels)
-    
-    
 
-    
+
+
+
     """ ====== combine Timeseries ===== """
     combi = TimeSeriesDecomposition()
     combi.factorization = decomposition
     combi.data = preprocessed
     combi.roi = roidata
     return combi
-'''    
+'''

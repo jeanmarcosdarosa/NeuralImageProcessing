@@ -110,12 +110,17 @@ class sICA():
         self.latent_series = latent_series
 
     def __call__(self, timeseries):
+        
         self.pca = sld.PCA(n_components=self.variance)
+
         if self.latent_series:
             base = self.pca.fit_transform(timeseries.base.timecourses.T)
             time = np.dot(self.pca.components_, timeseries.timecourses.T)
         else:
-            base = self.pca.fit_transform(timeseries.timecourses.T)
+            try:
+                base = self.pca.fit_transform(timeseries.timecourses.T)
+            except np.linalg.LinAlgError:
+                return 'Error'
             time = self.pca.components_
 
 
@@ -468,6 +473,7 @@ class ObjectScrambledConcat():
 
         common = list(set(reduce(lambda x, y: set(x).intersection(y), [ts.label_sample for ts in timeserieses])))
         common.sort()
+        print common
         for ts_ind, ts in enumerate(timeserieses):
             out = ts.copy()
             ind = [self.scrambling(positions(lab, ts.label_sample)[:2], self.repititions, ts_ind) for lab in common]

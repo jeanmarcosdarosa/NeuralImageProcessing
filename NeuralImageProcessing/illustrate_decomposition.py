@@ -128,8 +128,8 @@ class VisualizeTimeseries(object):
                                 facecolor='g', alpha=0.2)
         ax.add_collection(axshade)
 
-    def add_samplelabel(self, ax, timeseries, rotation='0', toppos=False):
-        ax.set_xticks(range(0, timeseries.samplepoints, timeseries.timepoints))
+    def add_samplelabel(self, ax, timeseries, rotation='0', toppos=False, stimuli_offset):
+        ax.set_xticks(np.arange(timeseries.num_trials) * timeseries.timepoints + stimuli_offset)
         ax.set_xticklabels(timeseries.label_sample)
 
         for tick in ax.xaxis.iter_ticks():

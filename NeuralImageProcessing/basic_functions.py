@@ -511,6 +511,26 @@ class SampleConcat():
             out.timecourses = np.vstack(out.timecourses)
         out.name = common_substr(out.name)
         return out
+
+class StimulusIntegrator(object):
+    """sum all values within a stimulus that are above a certain threshold"""
+    def __init__(self, threshold=0):
+        self.threshold = threshold
+
+    def __call__(self, timeseries):
+        trial_shaped = timeseries.trial_shaped()
+        n_trials = trial_shaped.shape[0]
+        n_modes = trial_shaped.shape[2]
+        integrated = np.zeros((n_trials, n_modes))
+        for i_mode in range(n_modes):
+            for i_trial in range(n_trials):
+                trial = trial_shaped[i_trial, :, i_mode]
+                integrated[i_trial, i_mode] = np.sum(trial[trial > self.threshold])
+        out = timeseries.copy()
+        out.set_timecourses(integrated)
+        return out
+
+
 # helper functions
 
 def common_substr(data):

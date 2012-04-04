@@ -110,7 +110,7 @@ class sICA():
         self.latent_series = latent_series
 
     def __call__(self, timeseries):
-        
+
         self.pca = sld.PCA(n_components=self.variance)
 
         if self.latent_series:
@@ -272,9 +272,10 @@ class SampleSimilarityPure():
         return distanceself, distancecross
 
 class SelectTrials():
-    ''' selects trials bases on mask'''
+    ''' selects trials bases on mask
 
-
+        !!! mask has to be boolean !!!
+    '''
     def __init__(self):
         pass
 
@@ -482,13 +483,13 @@ class ObjectScrambledConcat():
             timecourses.append(out.timecourses)
             label_objects += [ts.name + '_' + lab for lab in ts.label_objects]
             name.append(ts.name)
-        
+
         out.timecourses = np.hstack(timecourses)
         out.name = common_substr(name)
         out.label_objects = label_objects
         out.label_sample = sum([[tmp] * self.repititions for tmp in common], [])
         out.shape = [ts.shape for ts in timeserieses]
-        return out  
+        return out
 
 class SampleConcat():
     ''' concat timeserieses timecourses'''
@@ -544,7 +545,7 @@ def positions(target, source):
 
 def scramble_simple(inds , leng, pos):
     extended_list = [inds[0]] * np.ceil(leng / 2.) + [inds[1]] * np.floor(leng / 2.)
-    
+
     shifted_list = extended_list[pos:] + extended_list[:pos]
     return shifted_list
 
@@ -552,4 +553,4 @@ def scramble_three(inds, leng, pos):
     if pos < 3:
         return scramble_simple(inds, leng, pos)
     elif pos == 3:
-        return [inds[1]] * leng  
+        return [inds[1]] * leng

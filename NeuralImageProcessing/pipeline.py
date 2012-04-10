@@ -80,21 +80,36 @@ class Block(object):
     def set_receiving(self):
         """reset input buffers after processing"""
         for key in self.input:
-            self.input[key] = '' 
+            self.input[key] = ''
 
 class TimeSeries(object):
-    ''' dim0: timepoints, dim1: objects'''
-    
+    ''' basic data structure to hold data and meta information
+
+        furthermore it can be used to do some basic transformations of the data
+
+        short description of the main variables:
+            * timecourses: numpy array with the actual data
+            * shape: the shape of the original data objects
+                     (e.g. (640, 480) for video data)
+            * typ: description of the data it holds, 2Dimage by default
+            * name: name of the data
+            * data can be divided in samples, each can hold a label
+
+        dim0: timepoints, dim1: objects
+    '''
     def __init__(self, series='', name=['standard_series'], shape=(),
                  typ='2DImage', label_sample=''):
-        self.timecourses = series
         self.shape = shape
+        if isinstance(series, str):
+            self.timecourses = series
+        else:
+            self.set_timecourses(series)
         self.typ = typ
         self.name = name
-        self.label_sample = label_sample 
+        self.label_sample = label_sample
         self.label_objects = []
-        self.shapes = []   
-    
+        self.shapes = []
+
     @property
     def timepoints(self):
         return self.timecourses.shape[0] / len(self.label_sample)

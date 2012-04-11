@@ -130,7 +130,7 @@ class TimeSeries(object):
         return self.timecourses.shape[0]
 
     def set_timecourses(self, timecourses):
-        self.timecourses = timecourses.reshape(-1, self.num_objects)
+        self.timecourses = timecourses.reshape(-1, self.num_objects).squeeze()
 
     def objects_sample(self, samplepoint):
         if type(self.shape) == type([]):

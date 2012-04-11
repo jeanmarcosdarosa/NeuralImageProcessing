@@ -281,7 +281,7 @@ class SelectTrials():
 
     def __call__(self, timeseries, mask):
         mask = mask.timecourses
-        selected_timecourses = timeseries.trial_shaped()[mask]
+        selected_timecourses = timeseries.trial_shaped()[mask,:,:]
         out = timeseries.copy()
         out.set_timecourses(selected_timecourses)
         out.label_sample = [out.label_sample[i] for i in np.where(mask)[0]]

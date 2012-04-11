@@ -164,10 +164,16 @@ def violin_plot(ax, data, pos, color):
     dist = max(pos) - min(pos)
     w = min(0.15 * max(dist, 1.0), 0.5)
     for d, p in zip(data, pos):
-        #where_nan = np.isnan(d)
-        #where_inf = np.isinf(d)
-        #print 'number of nans/infs: ', np.sum(where_nan), np.sum(where_inf)
-        #d = d[np.logical_not(where_nan * where_inf)]
+        where_nan = np.isnan(d)
+        where_inf = np.isinf(d)
+        if np.sum(np.logical_or(where_nan, where_inf)) > 0:
+            print 'number of nans/infs: ', np.sum(where_nan), np.sum(where_inf)
+            d = d[np.logical_not(np.logical_or(where_nan, where_inf))]
+            print d, type(d)
+            if not(d):
+                
+                print 'skipped'
+                continue
         k = gaussian_kde(d) #calculates the kernel density
         m = k.dataset.min() #lower bound of violin
         M = k.dataset.max() #upper bound of violin

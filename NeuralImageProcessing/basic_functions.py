@@ -8,12 +8,13 @@ reload(mtxfactor)
 
 FILT = {'median': sn.filters.median_filter, 'gauss':sn.filters.gaussian_filter,
         'uniform':sn.filters.uniform_filter, 'erosion': sn.binary_erosion, 'dilation': sn.binary_dilation,
-        'closing': sn.binary_closing}
+        'closing': sn.binary_closing, 'simple_erosion': sn.binary_erosion}
 FILTARG = {'median': lambda value: {'size':value}, 'gauss':lambda value: {'sigma':value},
            'uniform':lambda value: {'size':value},
            'erosion':lambda value: {'structure':sn.iterate_structure(sn.generate_binary_structure(2, 1), value)},
            'dilation':lambda value: {'structure':sn.iterate_structure(sn.generate_binary_structure(2, 1), value)},
-           'closing':lambda value: {'structure':sn.iterate_structure(sn.generate_binary_structure(2, 1), value)}
+           'closing':lambda value: {'structure':sn.iterate_structure(sn.generate_binary_structure(2, 1), value)},
+            'simple_erosion': lambda value: {} 
            }
 
 class Filter():

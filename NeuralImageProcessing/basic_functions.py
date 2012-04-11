@@ -111,7 +111,7 @@ class sICA():
         self.latent_series = latent_series
 
     def __call__(self, timeseries):
-        
+
         self.pca = sld.PCA(n_components=self.variance)
 
         if self.latent_series:
@@ -273,15 +273,16 @@ class SampleSimilarityPure():
         return distanceself, distancecross
 
 class SelectTrials():
-    ''' selects trials bases on mask'''
+    ''' selects trials bases on mask
 
-
+        !!! mask has to be boolean !!!
+    '''
     def __init__(self):
         pass
 
     def __call__(self, timeseries, mask):
         mask = mask.timecourses
-        selected_timecourses = timeseries.trial_shaped()[mask]
+        selected_timecourses = timeseries.trial_shaped()[mask,:,:]
         out = timeseries.copy()
         out.set_timecourses(selected_timecourses)
         out.label_sample = [out.label_sample[i] for i in np.where(mask)[0]]
@@ -483,13 +484,13 @@ class ObjectScrambledConcat():
             timecourses.append(out.timecourses)
             label_objects += [ts.name + '_' + lab for lab in ts.label_objects]
             name.append(ts.name)
-        
+
         out.timecourses = np.hstack(timecourses)
         out.name = common_substr(name)
         out.label_objects = label_objects
         out.label_sample = sum([[tmp] * self.repititions for tmp in common], [])
         out.shape = [ts.shape for ts in timeserieses]
-        return out  
+        return out
 
 class SampleConcat():
     ''' concat timeserieses timecourses'''
@@ -511,6 +512,26 @@ class SampleConcat():
             out.timecourses = np.vstack(out.timecourses)
         out.name = common_substr(out.name)
         return out
+
+class StimulusIntegrator(object):
+    """sum all values within a stimulus that are above a certain threshold"""
+    def __init__(self, threshold=0):
+        self.threshold = threshold
+
+    def __call__(self, timeseries):
+        trial_shaped = timeseries.trial_shaped()
+        n_trials = trial_shaped.shape[0]
+        n_modes = trial_shaped.shape[2]
+        integrated = np.zeros((n_trials, n_modes))
+        for i_mode in range(n_modes):
+            for i_trial in range(n_trials):
+                trial = trial_shaped[i_trial, :, i_mode]
+                integrated[i_trial, i_mode] = np.sum(trial[trial > self.threshold])
+        out = timeseries.copy()
+        out.set_timecourses(integrated)
+        return out
+
+
 # helper functions
 
 def common_substr(data):
@@ -545,7 +566,7 @@ def positions(target, source):
 
 def scramble_simple(inds , leng, pos):
     extended_list = [inds[0]] * np.ceil(leng / 2.) + [inds[1]] * np.floor(leng / 2.)
-    
+
     shifted_list = extended_list[pos:] + extended_list[:pos]
     return shifted_list
 
@@ -553,4 +574,4 @@ def scramble_three(inds, leng, pos):
     if pos < 3:
         return scramble_simple(inds, leng, pos)
     elif pos == 3:
-        return [inds[1]] * leng  
+        return [inds[1]] * leng

@@ -190,8 +190,8 @@ class stICA():
 
 class NNMA():
 
-    def __init__(self, latents=100, maxcount=100, param=None):
-        self.latents = latents
+    def __init__(self, variance=100, maxcount=100, **param):
+        self.latents = variance
         self.maxcount = maxcount
         if not(param):
             self.param = dict(sparse_par=0, sparse_par3=0, psi=1e-12, eps=1e-7)
@@ -282,7 +282,7 @@ class SelectTrials():
 
     def __call__(self, timeseries, mask):
         mask = mask.timecourses
-        selected_timecourses = timeseries.trial_shaped()[mask,:,:]
+        selected_timecourses = timeseries.trial_shaped()[mask, :, :]
         out = timeseries.copy()
         out.set_timecourses(selected_timecourses)
         out.label_sample = [out.label_sample[i] for i in np.where(mask)[0]]

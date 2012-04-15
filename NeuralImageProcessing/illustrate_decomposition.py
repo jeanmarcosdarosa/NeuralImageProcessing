@@ -72,15 +72,23 @@ class VisualizeTimeseries(object):
     def contour(self, ax, im):
         ax.contour(im, [0.3], colors=['k'])
 
-    def overlay_image(self, ax, im):
-        im_rgba = plt.cm.jet(im / 2 + 0.5)
-        im_rgba[:, :, 3] = 0.8
-        im_rgba[np.abs(im) < 0.1, 3] = 0
+    def overlay_image(self, ax, im, threshold=0.1, title=False, colormap=plt.cm.hsv_r):
+        print colormap
+        im_rgba = colormap(im / 2 + 0.5)
+        #im_rgba[:, :, 3] = 0.8
+        #im_rgba[np.abs(im) < threshold, 3] = 0
+        alpha = np.abs(im) - threshold
+        alpha[alpha < 0] = 0
+        alpha = np.sqrt(alpha)
+        im_rgba[:, :, 3] = alpha
         ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
-
-    def imshow(self, ax, im, title=False, colorbar=False):
-        im = ax.imshow(im, aspect='equal', interpolation='nearest', cmap=plt.cm.jet)
-        ax.set_axis_off()
+        if title:
+            ax.set_title(title)
+        
+    def imshow(self, ax, im, title=False, colorbar=False, colormap=plt.cm.jet):
+        im = ax.imshow(im, aspect='equal', interpolation='nearest', cmap=colormap)
+        ax.set_xticks([])
+        ax.set_yticks([])
         if title:
             ax.set_title(title)
         if colorbar:

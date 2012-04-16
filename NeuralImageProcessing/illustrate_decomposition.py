@@ -39,11 +39,15 @@ class VisualizeTimeseries(object):
             ax.set_axis_off()
             self.axes['base'].append(ax)
 
-    def subplot(self, num_objects):
+    def subplot(self, num_objects, dim2=None):
         if not(self.fig):
             self.fig = plt.figure(figsize=(13, 13))
-        subplot_dim1 = np.ceil(np.sqrt(num_objects))
-        subplot_dim2 = np.ceil(num_objects / subplot_dim1)
+        if not(dim2):
+            subplot_dim1 = np.ceil(np.sqrt(num_objects))
+            subplot_dim2 = np.ceil(num_objects / subplot_dim1)
+        else: 
+            subplot_dim2 = dim2
+            subplot_dim1 = np.ceil(1.*num_objects / subplot_dim2)
         for axind in xrange(num_objects):
             axhandle = self.fig.add_subplot(subplot_dim1, subplot_dim2, axind + 1)
             self.axes['base'].append(axhandle)
@@ -73,7 +77,6 @@ class VisualizeTimeseries(object):
         ax.contour(im, [0.3], colors=['k'])
 
     def overlay_image(self, ax, im, threshold=0.1, title=False, colormap=plt.cm.hsv_r):
-        print colormap
         im_rgba = colormap(im / 2 + 0.5)
         #im_rgba[:, :, 3] = 0.8
         #im_rgba[np.abs(im) < threshold, 3] = 0

@@ -88,8 +88,8 @@ class VisualizeTimeseries(object):
         if title:
             ax.set_title(title)
         
-    def imshow(self, ax, im, title=False, colorbar=False, colormap=plt.cm.jet):
-        im = ax.imshow(im, aspect='equal', interpolation='nearest', cmap=colormap)
+    def imshow(self, ax, im, title=False, colorbar=False, **imargs):
+        im = ax.imshow(im, aspect='equal', interpolation='nearest', **imargs)
         ax.set_xticks([])
         ax.set_yticks([])
         if title:

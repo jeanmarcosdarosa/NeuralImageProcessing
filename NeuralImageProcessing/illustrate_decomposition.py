@@ -18,7 +18,7 @@ class VisualizeTimeseries(object):
 
 
     def oneaxes(self):
-        self.fig = plt.figure(figsize=(15, 12))
+        self.fig = plt.figure(figsize=(8, 8))
         ax = self.fig.add_subplot(111)
         self.axes['base'].append(ax)
         self.axes['time'].append(ax)
@@ -41,7 +41,7 @@ class VisualizeTimeseries(object):
 
     def subplot(self, num_objects, dim2=None):
         if not(self.fig):
-            self.fig = plt.figure(figsize=(13, 13))
+            self.fig = plt.figure(figsize=(8, 8))
         if not(dim2):
             subplot_dim1 = np.ceil(np.sqrt(num_objects))
             subplot_dim2 = np.ceil(num_objects / subplot_dim1)
@@ -73,10 +73,10 @@ class VisualizeTimeseries(object):
     def contourfaces(self, ax, im):
         ax.contourf(im, [0.3, 1], colors=['r'], alpha=0.2)
 
-    def contour(self, ax, im):
-        ax.contour(im, [0.3], colors=['k'])
+    def contour(self, ax, im, **cargs):
+        ax.contour(im, **cargs)
 
-    def overlay_image(self, ax, im, threshold=0.1, title=False, colormap=plt.cm.hsv_r):
+    def overlay_image(self, ax, im, threshold=0.1, title=False, ylabel=False, colormap=plt.cm.hsv_r):
         im_rgba = colormap(im / 2 + 0.5)
         #im_rgba[:, :, 3] = 0.8
         #im_rgba[np.abs(im) < threshold, 3] = 0
@@ -87,13 +87,15 @@ class VisualizeTimeseries(object):
         ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
         if title:
             ax.set_title(title)
+        if ylabel:
+            ax.set_ylabel(**ylabel)
         
     def imshow(self, ax, im, title=False, colorbar=False, **imargs):
         im = ax.imshow(im, aspect='equal', interpolation='nearest', **imargs)
         ax.set_xticks([])
         ax.set_yticks([])
         if title:
-            ax.set_title(title)
+            ax.set_title(**title)
         if colorbar:
             self.fig.colorbar(im, ax=ax)
 

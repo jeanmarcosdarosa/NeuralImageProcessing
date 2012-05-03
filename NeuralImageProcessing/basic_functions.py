@@ -208,7 +208,7 @@ class NNMA():
 
         base = self.X
         new_norm = np.diag(base[:, np.argmax(np.abs(base), 1)])
-        base /= new_norm.reshape((-1, 1))
+        base /= new_norm.reshape((-1, 1)) + 1E-15
         out.timecourses = self.A
         out.timecourses *= new_norm
 
@@ -289,7 +289,9 @@ class SelectTrials():
         return out
 
 class CalcStimulusDrive():
-    ''' creates pseudo trial and calculates distance metric between them (for each object)'''
+    ''' creates pseudo trial and calculates distance metric between them (for each object)
+        does not take stimuli into account with only one repetition
+    '''
 
     def __init__(self, metric='correlation'):
         self.metric = metric
@@ -300,12 +302,18 @@ class CalcStimulusDrive():
         stim_set = set(labels)
         # create dictionary with key: stimulus and value: trial where stimulus was given
         stim_pos = {}
+        min_stimlen = np.nan
         for stimulus in stim_set:
-            stim_pos[stimulus] = np.where([i == stimulus for i in labels])[0]
-        min_len = min([len(i)for i in stim_pos.values()])
+            occurence = np.where([i == stimulus for i in labels])[0]
+            if len(occurence) > 1:
+                stim_pos[stimulus] = occurence
+                min_stimlen = np.nanmin([min_stimlen, len(occurence)])
+ 
+            
+        
         # create list of lists, where each sublist contains for all stimuli one exclusive trial
         indices = []
-        for i in range(min_len):
+        for i in range(int(min_stimlen)):
             indices.append([j[i] for j in stim_pos.values()])
         # create pseudo-trial timecourses
         trial_timecourses = np.array([timeseries.trial_shaped()[i].reshape(-1, timeseries.num_objects) for i in indices])

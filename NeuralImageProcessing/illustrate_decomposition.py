@@ -90,12 +90,14 @@ class VisualizeTimeseries(object):
         if ylabel:
             ax.set_ylabel(**ylabel)
         
-    def imshow(self, ax, im, title=False, colorbar=False, **imargs):
+    def imshow(self, ax, im, title=False, colorbar=False, ylabel=False, **imargs):
         im = ax.imshow(im, aspect='equal', interpolation='nearest', **imargs)
         ax.set_xticks([])
         ax.set_yticks([])
         if title:
             ax.set_title(**title)
+        if ylabel:
+            ax.set_ylabel(**ylabel)
         if colorbar:
             self.fig.colorbar(im, ax=ax)
 
@@ -110,10 +112,14 @@ class VisualizeTimeseries(object):
         shade_color = 0
         labels = timeseries.label_sample
         reference_label = labels[0]
+        self.shadelabel = []
         for label in labels:
+            self.shadelabel.append(label)
             if not(label == reference_label):
                 reference_label = label
                 shade_color = 1 - shade_color
+            elif len(self.shadelabel) > 1:
+                self.shadelabel[-1] = ''
             shade.append(shade_color)
         shade = np.outer(np.array(shade), np.ones((timeseries.timepoints))).flatten()
         shade[np.hstack((np.array([0]), np.diff(shade))) == -1] = 1

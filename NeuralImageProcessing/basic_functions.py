@@ -14,7 +14,7 @@ FILTARG = {'median': lambda value: {'size':value}, 'gauss':lambda value: {'sigma
            'erosion':lambda value: {'structure':sn.iterate_structure(sn.generate_binary_structure(2, 1), value)},
            'dilation':lambda value: {'structure':sn.iterate_structure(sn.generate_binary_structure(2, 1), value)},
            'closing':lambda value: {'structure':sn.iterate_structure(sn.generate_binary_structure(2, 1), value)},
-            'simple_erosion': lambda value: {} 
+            'simple_erosion': lambda value: {}
            }
 
 class Filter():
@@ -310,9 +310,9 @@ class CalcStimulusDrive():
             if len(occurence) > 1:
                 stim_pos[stimulus] = occurence
                 min_stimlen = np.nanmin([min_stimlen, len(occurence)])
- 
-            
-        
+
+
+
         # create list of lists, where each sublist contains for all stimuli one exclusive trial
         indices = []
         for i in range(int(min_stimlen)):
@@ -523,7 +523,7 @@ class SampleConcat():
         return out
 
 class StimulusIntegrator(object):
-    """sum all values within a stimulus that are above a certain threshold"""
+    """calculate mean of all values within a stimulus that are above a certain threshold"""
     def __init__(self, threshold=0):
         self.threshold = threshold
 
@@ -535,7 +535,7 @@ class StimulusIntegrator(object):
         for i_mode in range(n_modes):
             for i_trial in range(n_trials):
                 trial = trial_shaped[i_trial, :, i_mode]
-                integrated[i_trial, i_mode] = np.sum(trial[trial > self.threshold])
+                integrated[i_trial, i_mode] = np.mean(trial[trial > self.threshold])
         out = timeseries.copy()
         out.set_timecourses(integrated)
         return out

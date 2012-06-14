@@ -119,8 +119,13 @@ class RRI(object):
         sparse_param = param.get("sparse_par", 0)
         sparse_param2 = param.get("sparse_par2", 0)
         sparse_param3 = param.get("sparse_par3", 0)
+        sp_loc_temp = param.get("sp_loc_temp", 0)
         smooth_param = param.get("smoothness", 0)
         negbase = param.get("negbase", 0)
+        start_wt_time = param.get("start_wt_time", False)
+        learn_base = param.get("learn_base", True)
+        basenorm = param.get("basenorm", np.max)
+        globalnorm = param.get("globalnorm", lambda x: np.sum(x, 0))
         num_mode = A.shape[1]
 
         E = Y - np.dot(A, X)
@@ -128,21 +133,28 @@ class RRI(object):
         #random.shuffle(list)
         #list = np.argsort(np.sum(X>0,1))
         for j in indlist:
-            mask = np.array([True] * A.shape[1])
-            mask[j] = False
+            
             aj = A[:, j]
             xj = X[j, :]
-
+            
 
             Rt = E + np.outer(aj, xj)
-
-            xj = self.project_residuen(Rt.T, xj, aj, psi, sparse_param, smooth_param, sparse_param2=sparse_param2, X=X)
-            #analysis:
-            xj /= np.max(xj) + psi
-            #xj /= np.sqrt(np.sum(xj ** 2)) + psi
-
-            rect = False if (j >= (num_mode - negbase)) else True
-            aj = self.project_residuen(Rt, aj, xj, psi, 0, rectify=rect, sparse_param2=sparse_param3, X=A.T)
+            
+            if start_wt_time:
+                rect = False if (j >= (num_mode - negbase)) else True
+                aj = self.project_residuen(Rt, j, xj, psi, sparse_param=sp_loc_temp, rectify=rect, sparse_param2=sparse_param3, X=A.T, globalnorm=globalnorm)
+            
+            if learn_base: 
+                xj = self.project_residuen(Rt.T, j, aj, psi, sparse_param, smooth_param, sparse_param2=sparse_param2, X=X, globalnorm=globalnorm)
+                #analysis:
+                #xj /= np.max(xj) + psi
+                #xj /= np.sqrt(np.sum(xj ** 2)) + psi
+                xj /= basenorm(xj) + psi
+            
+            if not(start_wt_time):
+                rect = False if (j >= (num_mode - negbase)) else True
+                aj = self.project_residuen(Rt, j, xj, psi, sparse_param=sp_loc_temp, rectify=rect, sparse_param2=sparse_param3, X=A.T, globalnorm=globalnorm)
+            
             Rt -= np.outer(aj, xj)
 
             A[:, j] = aj
@@ -152,14 +164,18 @@ class RRI(object):
 
         return A, X
 
-    def project_residuen(self, res, old, to_base, psi=1e-12, sparse_param=0, smoothness=0, rectify=True, sparse_param2=0, X=0):
-        new_vec = np.dot(res, to_base) + psi * old
+    def project_residuen(self, res, oldind, to_base, psi=1e-12, sparse_param=0, smoothness=0, rectify=True, sparse_param2=0, X=0, globalnorm=''):
+
+        new_vec = np.dot(res, to_base) + psi * X[oldind]
         new_vec -= sparse_param
 
         if sparse_param2 > 0:
             #analysis
-            norm = np.sqrt(np.sum(X ** 2, 1)).reshape((-1, 1)) + 1E-15
-            occupation = np.sum(X / norm, 0) - old / (np.sqrt(np.sum(old ** 2)) + 1E-15)
+            mask = np.ones(X.shape[0]).astype('bool')
+            mask[oldind] = False
+            #norm = np.sqrt(np.sum(X ** 2, 1)).reshape((-1, 1)) + 1E-15
+            occupation = globalnorm(X[mask]) #np.sum(X / norm, 0) - old / (np.sqrt(np.sum(old ** 2)) + 1E-15)
+            #occupation = np.sum(X, 0) - old
 
             #new
 
@@ -174,7 +190,7 @@ class RRI(object):
             new_vec -= sparse_param2 * occupation
 
         if smoothness > 0:
-            new_vec += smoothness * np.dot(self.S, old * np.max(new_vec))
+            new_vec += smoothness * np.dot(self.S, X[oldind] * np.max(new_vec))
 
         new_vec /= (np.linalg.norm(to_base) ** 2 + psi + smoothness)
 
@@ -182,7 +198,6 @@ class RRI(object):
             new_vec[new_vec < 0] = 0
 
         return new_vec
-
 
 def stJADE(X, **param):
 

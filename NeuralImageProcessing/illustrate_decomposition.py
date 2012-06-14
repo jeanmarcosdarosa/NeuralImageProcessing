@@ -86,7 +86,7 @@ class VisualizeTimeseries(object):
         im_rgba[:, :, 3] = alpha
         ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
         if title:
-            ax.set_title(title)
+            ax.set_title(**title)
         if ylabel:
             ax.set_ylabel(**ylabel)
         

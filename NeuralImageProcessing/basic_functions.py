@@ -127,7 +127,9 @@ class sICA():
 
         normed_base = base / np.sqrt(self.pca.explained_variance_)
         normed_time = time * np.sqrt(self.pca.explained_variance_.reshape((-1, 1)))
-
+        
+        print normed_base.shape, normed_time.shape
+        
         self.ica = sld.FastICA(whiten=False)
         self.ica.fit(normed_base)
 
@@ -395,9 +397,8 @@ class SortBySamplename():
         timecourses = timeseries.trial_shaped()
         labels = timeseries.label_sample
         label_ind = np.argsort(labels)
-        timecourses = timecourses[label_ind]
         out = timeseries.copy()
-        out.set_timecourses(timecourses)
+        out.set_timecourses(timecourses[label_ind])
         out.label_sample = [labels[i] for i in label_ind]
         return out
 
@@ -417,7 +418,7 @@ class Distance():
             dist = pdist(timeseries.timecourses, self.metric)
             labels = timeseries.label_sample
         if self.onlymin:
-            dist = np.min(squareform(dist) + np.diag(np.ones(len(labels))), 0)
+            dist = np.nanmin(squareform(dist) + np.diag(np.ones(len(labels))), 0)
             new_labels = labels
         else:
             new_labels = reduce(lambda x, y:x + y, [[labels[i] + ':' + labels[j] for i in range(j + 1, len(labels))] for j in range(len(labels))])

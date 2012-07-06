@@ -37,7 +37,11 @@ class VisualizeTimeseries(object):
             #create baseaxes
             ax = self.fig.add_axes([0.1, height * i + 0.05, min(height, 0.15), min(height, 0.15)])
             ax.set_axis_off()
+            ax.set_gid(num_objects - 1 - i)
             self.axes['base'].append(ax)
+        # bring plots in order as you would expect from subplot
+        self.axes['base'].reverse()
+        self.axes['time'].reverse()
 
     def subplot(self, num_objects, dim2=None):
         if not(self.fig):

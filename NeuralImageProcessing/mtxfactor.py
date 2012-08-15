@@ -17,6 +17,18 @@ from scipy.spatial.distance import cdist
 print 'mtxfactor loaded'
 
 
+
+
+def coexplained_norm(x, res):
+    norm = (np.sum(x ** 2, 1) + 1E-15)
+    proj = np.dot(x, res) / norm.reshape((-1, 1))
+    actitvity = np.diag(np.dot(proj, proj.T))
+    return np.dot(actitvity, x)
+
+NORMS = {'total_sum': lambda x, res: np.sum(x, 0),
+       'coexplained': coexplained_norm
+       }
+
 class RRI(object):
 
     def frob_dist(self, Y, A, X):
@@ -125,7 +137,7 @@ class RRI(object):
         start_wt_time = param.get("start_wt_time", False)
         learn_base = param.get("learn_base", True)
         basenorm = param.get("basenorm", np.max)
-        globalnorm = param.get("globalnorm", lambda x: np.sum(x, 0))
+        globalnorm = NORMS[param.get("globalnorm", 'total_sum')]
         num_mode = A.shape[1]
 
         E = Y - np.dot(A, X)
@@ -173,8 +185,10 @@ class RRI(object):
             #analysis
             mask = np.ones(X.shape[0]).astype('bool')
             mask[oldind] = False
+            
+            #print res.shape, X[mask].shape
             #norm = np.sqrt(np.sum(X ** 2, 1)).reshape((-1, 1)) + 1E-15
-            occupation = globalnorm(X[mask]) #np.sum(X / norm, 0) - old / (np.sqrt(np.sum(old ** 2)) + 1E-15)
+            occupation = globalnorm(X[mask], res) #np.sum(X / norm, 0) - old / (np.sqrt(np.sum(old ** 2)) + 1E-15)
             #occupation = np.sum(X, 0) - old
 
             #new

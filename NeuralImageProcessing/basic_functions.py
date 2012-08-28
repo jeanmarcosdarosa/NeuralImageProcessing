@@ -127,9 +127,9 @@ class sICA():
 
         normed_base = base / np.sqrt(self.pca.explained_variance_)
         normed_time = time * np.sqrt(self.pca.explained_variance_.reshape((-1, 1)))
-        
+
         print normed_base.shape, normed_time.shape
-        
+
         self.ica = sld.FastICA(whiten=False)
         self.ica.fit(normed_base)
 
@@ -159,7 +159,7 @@ class sICA():
 
 class stICA():
 
-    def __init__(self, variance=None, param={}):
+    def __init__(self, variance=None, **param):
         param['latents'] = variance
         self.param = param
 
@@ -258,7 +258,10 @@ class SampleSimilarity():
 class SampleSimilarityPure():
     """calculate similarity of samples with the same Labels
 
-    return dictionaries with interlabel and crosslabel distances
+    return dictionaries with interlabel and crosslabel distances.
+    The crosslabel distance shows how *standard* a response is, how similar
+    to all other stimuli. We are interested in stimuli that have a high similarity
+    within the same label and low similarity accross.
     """
 
     def __init__(self, metric='correlation'):

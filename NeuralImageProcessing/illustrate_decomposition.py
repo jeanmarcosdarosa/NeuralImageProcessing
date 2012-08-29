@@ -187,7 +187,7 @@ def violin_plot(ax, data, pos, color):
     '''
     dist = max(pos) - min(pos)
     w = min(0.15 * max(dist, 1.0), 0.5)
-    for d, p in zip(data, pos):
+    for i, (d, p) in enumerate(zip(data, pos)):
         where_nan = np.isnan(d)
         where_inf = np.isinf(d)
         if np.sum(np.logical_or(where_nan, where_inf)) > 0:
@@ -204,8 +204,12 @@ def violin_plot(ax, data, pos, color):
         x = np.arange(m, M, (M - m) / 100.) # support for violin
         v = k.evaluate(x) #violin profile (density curve)
         v = v / v.max() * w #scaling the violin to the available space
-        ax.fill_betweenx(x, p, v + p, facecolor=color, edgecolor='None', alpha=0.3)
-        ax.fill_betweenx(x, p, -v + p, facecolor=color, edgecolor='None', alpha=0.3)
+        if len(color) > 1:
+            c = color[i]
+        else:
+            c = color
+        ax.fill_betweenx(x, p, v + p, facecolor=c, edgecolor='None', alpha=0.3)
+        ax.fill_betweenx(x, p, -v + p, facecolor=c, edgecolor='None', alpha=0.3)
 
 '''
 def initmouseob(path='/media/Iomega_HDD/Experiments/Messungen/111210sph/',

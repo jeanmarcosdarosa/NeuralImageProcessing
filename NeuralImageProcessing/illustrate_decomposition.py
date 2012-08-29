@@ -12,13 +12,14 @@ from scipy.stats import gaussian_kde
 
 class VisualizeTimeseries(object):
 
-    def __init__(self):
-        self.fig = None
+    def __init__(self, fig=None):
+        self.fig = fig
         self.axes = {'base':[], 'time':[]}
 
 
     def oneaxes(self):
-        self.fig = plt.figure(figsize=(8, 8))
+        if not self.fig:
+            self.fig = plt.figure(figsize=(8, 8))
         ax = self.fig.add_subplot(111)
         self.axes['base'].append(ax)
         self.axes['time'].append(ax)

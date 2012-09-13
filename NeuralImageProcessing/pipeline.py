@@ -179,6 +179,8 @@ class TimeSeries(object):
 
     def load(self, filename):
         self.__dict__.update(json.load(open(filename + '.json')))
+        if not(type(self.shape[0]) == type(list)):
+            self.shape = tuple(self.shape)
         self.timecourses = np.load(filename + '.npy')
         if self.typ == 'latent_series':
             self.base = TimeSeries()

@@ -31,7 +31,7 @@ class VisualizeTimeseries(object):
         height = 0.9 / num_objects
         for i in range(num_objects):
             #create timeaxes
-            ax = self.fig.add_axes([0.2, height * i + 0.05, 0.75, height])
+            ax = self.fig.add_axes([0.2, height * i + 0.05, 0.75, min(height - 0.01, 0.15)])
             ax.set_xticklabels([])
             self.axes['time'].append(ax)
             #create baseaxes
@@ -82,16 +82,18 @@ class VisualizeTimeseries(object):
         #im_rgba[np.abs(im) < threshold, 3] = 0
         alpha = np.abs(im) - threshold
         alpha[alpha < 0] = 0
+        alpha[alpha < 0.1] = 0.1
         alpha = np.sqrt(alpha)
-        im_rgba[:, :, 3] = alpha
-        ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
+        im_rgba[:, :, 3] = 0.3#alpha
+        ax.imshow(im_rgba, interpolation='none') #, aspect='equal')
         if title:
             ax.set_title(**title)
         if ylabel:
             ax.set_ylabel(**ylabel)
         
     def imshow(self, ax, im, title=False, colorbar=False, ylabel=False, **imargs):
-        im = ax.imshow(im, aspect='equal', interpolation='nearest', **imargs)
+        im = ax.imshow(im, **imargs)
+        
         ax.set_xticks([])
         ax.set_yticks([])
         if title:

@@ -448,13 +448,13 @@ class ObjectConcat():
         if self.unequalsample:
             common = list(set(reduce(lambda x, y: set(x).intersection(y), [ts.label_sample for ts in timeserieses])))
             common.sort()
+            print 'common sample ', len(common)
         for ts in timeserieses:
             out = ts.copy()
             if self.unequalsample:
                 ind = [positions(lab, ts.label_sample)[:self.unequalsample] for lab in common]
                 ind = sum(ind, [])
-                print len(ind)
-                print ts.num_objects, ts.num_trials, len(ts.label_sample), ts.samplepoints, ts.timepoints, ts.timecourses.shape
+                print ts.name, ' reduced from ', len(ts.label_sample)
                 out.set_timecourses(ts.trial_shaped()[ind])
                 timecourses.append(out.timecourses)
             else:
@@ -541,7 +541,7 @@ class StimulusIntegrator(object):
         return out
 
 
-# helper functions
+
 
 def common_substr(data):
     substr = ''

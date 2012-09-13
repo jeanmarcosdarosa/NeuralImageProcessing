@@ -19,14 +19,21 @@ print 'mtxfactor loaded'
 
 
 
-def coexplained_norm(x, res):
+def coexplained_norm(new_vec, x, res):
     norm = (np.sum(x ** 2, 1) + 1E-15)
     proj = np.dot(x, res) / norm.reshape((-1, 1))
     actitvity = np.diag(np.dot(proj, proj.T))
     return np.dot(actitvity, x)
 
-NORMS = {'total_sum': lambda x, res: np.sum(x, 0),
-       'coexplained': coexplained_norm
+def cor_norm(new_vec, x, res):
+    norm = np.sqrt((np.sum(x ** 2, 1) + 1E-15))
+    cor = np.dot(new_vec / np.sqrt(np.sum(new_vec ** 2) + 1E-15), (x / norm.reshape((-1, 1))).T)
+    return np.dot(cor, x)
+
+NORMS = {'total_sum': lambda new_vec, x, res: np.sum(x, 0),
+       'coexplained': coexplained_norm,
+       'binary_sum': lambda new_vec, x, res: np.sum(x > 0, 0),
+       'cor': cor_norm
        }
 
 class RRI(object):
@@ -73,11 +80,28 @@ class RRI(object):
 
         A, X = self.init_factors(Y, k, A, X, Xpart, shape)
         if param['smoothness'] > 0:
-            self.S = (np.diag(np.ones(X.shape[1] - 1), 1) + np.diag(np.ones(X.shape[1] - 1), -1) + np.diag(np.ones(X.shape[1] - shape[1]), shape[1]) + np.diag(np.ones(X.shape[1] - shape[1]), -shape[1]))
-            for j in range(shape[0] - 1):
-                pos = shape[1] * (j + 1)
-                self.S[pos - 1, pos] = 0
-                self.S[pos, pos - 1] = 0
+        #    self.S = (np.diag(np.ones(X.shape[1] - 1), 1) + np.diag(np.ones(X.shape[1] - 1), -1) + np.diag(np.ones(X.shape[1] - shape[1]), shape[1]) + np.diag(np.ones(X.shape[1] - shape[1]), -shape[1]))
+        #    for j in range(shape[0] - 1):
+        #        pos = shape[1] * (j + 1)
+        #        self.S[pos - 1, pos] = 0
+        #        self.S[pos, pos - 1] = 0
+        
+        
+            all = []
+            for i in range(shape[0]):
+                for j in range(shape[1]):
+                    temp = np.zeros(shape)
+                    istart = max(i - 1, 0)
+                    iend = min(i + 2, shape[0] - 1)
+                    if j < shape[1] - 1:
+                        temp[istart:iend, j + 1] = 1
+                    temp[istart:iend, j] = 1
+                    if j > 0:
+                        temp[istart:iend, j - 1] = 1
+                    temp[i, j] = 0
+                    all.append(temp.flatten())
+            self.S = np.array(all)
+            
         #self.S[0,1]=2
         #self.S[-1,-2]=2
 
@@ -188,7 +212,7 @@ class RRI(object):
             
             #print res.shape, X[mask].shape
             #norm = np.sqrt(np.sum(X ** 2, 1)).reshape((-1, 1)) + 1E-15
-            occupation = globalnorm(X[mask], res) #np.sum(X / norm, 0) - old / (np.sqrt(np.sum(old ** 2)) + 1E-15)
+            occupation = globalnorm(new_vec, X[mask], res) #np.sum(X / norm, 0) - old / (np.sqrt(np.sum(old ** 2)) + 1E-15)
             #occupation = np.sum(X, 0) - old
 
             #new

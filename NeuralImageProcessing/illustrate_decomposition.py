@@ -12,32 +12,37 @@ from scipy.stats import gaussian_kde
 
 class VisualizeTimeseries(object):
 
-    def __init__(self):
-        self.fig = None
+    def __init__(self, fig=None):
+        self.fig = fig
         self.axes = {'base':[], 'time':[]}
 
 
     def oneaxes(self):
-        self.fig = plt.figure(figsize=(8, 8))
+        if not self.fig:
+            self.fig = plt.figure(figsize=(8, 8))
         ax = self.fig.add_subplot(111)
         self.axes['base'].append(ax)
         self.axes['time'].append(ax)
 
 
-    def base_and_time(self, num_objects):
+    def base_and_time(self, num_objects, height=0.9):
         if not(self.fig):
             self.fig = plt.figure(figsize=(20, 13))
 
-        height = 0.9 / num_objects
+        height = height / num_objects
         for i in range(num_objects):
             #create timeaxes
-            ax = self.fig.add_axes([0.2, height * i + 0.05, 0.75, min(height - 0.01, 0.15)])
+            ax = self.fig.add_axes([0.25, height * i + 0.05, 0.70, height])
             ax.set_xticklabels([])
             self.axes['time'].append(ax)
             #create baseaxes
-            ax = self.fig.add_axes([0.05, height * i + 0.05, min(height, 0.15), min(height, 0.15)])
+            ax = self.fig.add_axes([0.1, height * i + 0.05, min(height, 0.15), min(height, 0.15)])
             ax.set_axis_off()
+            ax.set_gid(num_objects - 1 - i)
             self.axes['base'].append(ax)
+        # bring plots in order as you would expect from subplot
+        self.axes['base'].reverse()
+        self.axes['time'].reverse()
 
     def subplot(self, num_objects, dim2=None):
         if not(self.fig):
@@ -45,7 +50,7 @@ class VisualizeTimeseries(object):
         if not(dim2):
             subplot_dim1 = np.ceil(np.sqrt(num_objects))
             subplot_dim2 = np.ceil(num_objects / subplot_dim1)
-        else: 
+        else:
             subplot_dim2 = dim2
             subplot_dim1 = np.ceil(1.*num_objects / subplot_dim2)
         for axind in xrange(num_objects):
@@ -82,18 +87,16 @@ class VisualizeTimeseries(object):
         #im_rgba[np.abs(im) < threshold, 3] = 0
         alpha = np.abs(im) - threshold
         alpha[alpha < 0] = 0
-        alpha[alpha < 0.1] = 0.1
         alpha = np.sqrt(alpha)
-        im_rgba[:, :, 3] = 0.3#alpha
-        ax.imshow(im_rgba, interpolation='none') #, aspect='equal')
+        im_rgba[:, :, 3] = alpha
+        ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
         if title:
             ax.set_title(**title)
         if ylabel:
             ax.set_ylabel(**ylabel)
-        
+
     def imshow(self, ax, im, title=False, colorbar=False, ylabel=False, **imargs):
-        im = ax.imshow(im, **imargs)
-        
+        im = ax.imshow(im, aspect='equal', interpolation='nearest', **imargs)
         ax.set_xticks([])
         ax.set_yticks([])
         if title:
@@ -184,7 +187,7 @@ def violin_plot(ax, data, pos, color):
     '''
     dist = max(pos) - min(pos)
     w = min(0.15 * max(dist, 1.0), 0.5)
-    for d, p in zip(data, pos):
+    for i, (d, p) in enumerate(zip(data, pos)):
         where_nan = np.isnan(d)
         where_inf = np.isinf(d)
         if np.sum(np.logical_or(where_nan, where_inf)) > 0:
@@ -192,7 +195,7 @@ def violin_plot(ax, data, pos, color):
             d = d[np.logical_not(np.logical_or(where_nan, where_inf))]
             print d, type(d)
             if not(d):
-                
+
                 print 'skipped'
                 continue
         k = gaussian_kde(d) #calculates the kernel density
@@ -201,8 +204,12 @@ def violin_plot(ax, data, pos, color):
         x = np.arange(m, M, (M - m) / 100.) # support for violin
         v = k.evaluate(x) #violin profile (density curve)
         v = v / v.max() * w #scaling the violin to the available space
-        ax.fill_betweenx(x, p, v + p, facecolor=color, edgecolor='None', alpha=0.3)
-        ax.fill_betweenx(x, p, -v + p, facecolor=color, edgecolor='None', alpha=0.3)
+        if len(color) > 1:
+            c = color[i]
+        else:
+            c = color
+        ax.fill_betweenx(x, p, v + p, facecolor=c, edgecolor='None', alpha=0.3)
+        ax.fill_betweenx(x, p, -v + p, facecolor=c, edgecolor='None', alpha=0.3)
 
 '''
 def initmouseob(path='/media/Iomega_HDD/Experiments/Messungen/111210sph/',

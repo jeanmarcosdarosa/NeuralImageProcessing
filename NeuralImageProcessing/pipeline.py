@@ -1,6 +1,7 @@
 import copy as cp
 import numpy as np
 import json
+from os.path import abspath
 
 class Event(object):
 
@@ -170,6 +171,7 @@ class TimeSeries(object):
         return out
 
     def save(self, filename):
+        self.file = abspath(filename)
         data = self.__dict__.copy()
         np.save(filename, data.pop('timecourses'))
         if self.typ == 'latent_series':

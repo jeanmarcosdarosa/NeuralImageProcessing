@@ -171,7 +171,6 @@ class TimeSeries(object):
         return out
 
     def save(self, filename):
-        self.file = abspath(filename)
         data = self.__dict__.copy()
         np.save(filename, data.pop('timecourses'))
         if self.typ == 'latent_series':
@@ -181,6 +180,7 @@ class TimeSeries(object):
 
     def load(self, filename):
         self.__dict__.update(json.load(open(filename + '.json')))
+        self.file = abspath(filename)
         if not(type(self.shape[0]) == type(list)):
             self.shape = tuple(self.shape)
         self.timecourses = np.load(filename + '.npy')

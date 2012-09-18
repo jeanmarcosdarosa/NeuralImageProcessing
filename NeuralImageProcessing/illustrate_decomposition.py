@@ -25,18 +25,26 @@ class VisualizeTimeseries(object):
         self.axes['time'].append(ax)
 
 
-    def base_and_time(self, num_objects, height=0.9):
+    def base_and_time(self, num_objects, height=0.9, aspect=False):
         if not(self.fig):
             self.fig = plt.figure(figsize=(20, 13))
 
         height = height / num_objects
+        if aspect:
+            figheight = self.fig.get_figheight()
+            figwidth = self.fig.get_figwidth()
+            figaspect = figwidth / figheight
+            aspect = aspect * figaspect
+        else: 
+            aspect = 1
+            
         for i in range(num_objects):
             #create timeaxes
-            ax = self.fig.add_axes([0.25, height * i + 0.05, 0.70, height])
+            ax = self.fig.add_axes([0.25, height * i + 0.05, 0.70, min(height, 0.2 * aspect) - 0.01])
             ax.set_xticklabels([])
             self.axes['time'].append(ax)
             #create baseaxes
-            ax = self.fig.add_axes([0.1, height * i + 0.05, min(height, 0.15), min(height, 0.15)])
+            ax = self.fig.add_axes([0.05, height * i + 0.05, min(height, 0.2) - 0.01, min(height, 0.2 * aspect) - 0.01])
             ax.set_axis_off()
             ax.set_gid(num_objects - 1 - i)
             self.axes['base'].append(ax)
@@ -85,18 +93,21 @@ class VisualizeTimeseries(object):
         im_rgba = colormap(im / 2 + 0.5)
         #im_rgba[:, :, 3] = 0.8
         #im_rgba[np.abs(im) < threshold, 3] = 0
+        
+        
         alpha = np.abs(im) - threshold
+        alpha /= (1 - threshold)
         alpha[alpha < 0] = 0
-        alpha = np.sqrt(alpha)
         im_rgba[:, :, 3] = alpha
-        ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
+        #alpha = np.sqrt(alpha)
+        ax.imshow(im_rgba, interpolation='none')
         if title:
             ax.set_title(**title)
         if ylabel:
             ax.set_ylabel(**ylabel)
 
     def imshow(self, ax, im, title=False, colorbar=False, ylabel=False, **imargs):
-        im = ax.imshow(im, aspect='equal', interpolation='nearest', **imargs)
+        im = ax.imshow(im, interpolation='none', **imargs)
         ax.set_xticks([])
         ax.set_yticks([])
         if title:

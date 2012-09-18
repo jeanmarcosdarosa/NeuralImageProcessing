@@ -40,11 +40,11 @@ class VisualizeTimeseries(object):
             
         for i in range(num_objects):
             #create timeaxes
-            ax = self.fig.add_axes([0.25, height * i + 0.05, 0.70, min(height, 0.2 * aspect) - 0.01])
+            ax = self.fig.add_axes([0.25, height * i + 0.05, 0.70, min(height - 0.01, 0.19 * aspect)])
             ax.set_xticklabels([])
             self.axes['time'].append(ax)
             #create baseaxes
-            ax = self.fig.add_axes([0.05, height * i + 0.05, min(height, 0.2) - 0.01, min(height, 0.2 * aspect) - 0.01])
+            ax = self.fig.add_axes([0.05, height * i + 0.05, min(height, 0.2) - 0.01, min(height - 0.01, 0.19 * aspect)])
             ax.set_axis_off()
             ax.set_gid(num_objects - 1 - i)
             self.axes['base'].append(ax)
@@ -89,7 +89,7 @@ class VisualizeTimeseries(object):
     def contour(self, ax, im, **cargs):
         ax.contour(im, **cargs)
 
-    def overlay_image(self, ax, im, threshold=0.1, title=False, ylabel=False, colormap=plt.cm.hsv_r):
+    def overlay_image(self, ax, im, threshold=0.1, title=False, ylabel=False, colormap=plt.cm.jet):
         im_rgba = colormap(im / 2 + 0.5)
         #im_rgba[:, :, 3] = 0.8
         #im_rgba[np.abs(im) < threshold, 3] = 0
@@ -98,8 +98,9 @@ class VisualizeTimeseries(object):
         alpha = np.abs(im) - threshold
         alpha /= (1 - threshold)
         alpha[alpha < 0] = 0
+        alpha = alpha ** 0.7
         im_rgba[:, :, 3] = alpha
-        #alpha = np.sqrt(alpha)
+        
         ax.imshow(im_rgba, interpolation='none')
         if title:
             ax.set_title(**title)
@@ -107,7 +108,7 @@ class VisualizeTimeseries(object):
             ax.set_ylabel(**ylabel)
 
     def imshow(self, ax, im, title=False, colorbar=False, ylabel=False, **imargs):
-        im = ax.imshow(im, interpolation='none', **imargs)
+        im = ax.imshow(im, interpolation='none', aspect='equal', **imargs)
         ax.set_xticks([])
         ax.set_yticks([])
         if title:
@@ -116,7 +117,19 @@ class VisualizeTimeseries(object):
             ax.set_ylabel(**ylabel)
         if colorbar:
             self.fig.colorbar(im, ax=ax)
-
+    
+    def overlay_workaround(self, ax, bg, bgargs, im, imargs, endargs):
+        fig = plt.figure(111)
+        axtemp = fig.add_subplot(111)
+        self.imshow(axtemp, bg, **bgargs)
+        self.overlay_image(axtemp, im, **imargs)
+        axtemp.set_axis_off()
+        fig.savefig('/home/jan/Downloads/temp.png', transparent=True, bbox_inches='tight', pad_inches=0)
+        plt.close(111)
+        new_im = plt.imread('/home/jan/Downloads/temp.png')
+        self.imshow(ax, new_im, **endargs)
+        
+        
     def plot(self, ax, time, **kwargs):
         ax.plot(time, '-', **kwargs)
         ax.xticklabels = []

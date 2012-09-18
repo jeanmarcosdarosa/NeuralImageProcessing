@@ -470,6 +470,7 @@ class ObjectConcat():
         out.label_objects = label_objects
         if self.unequalsample:
             out.label_sample = sum([[tmp] * self.unequalsample for tmp in common], [])
+            out.shape = (np.sum([ts.num_objects for ts in timeserieses]),)
         if self.unequalobj:
             out.shape = [ts.shape for ts in timeserieses]
         return out
@@ -542,8 +543,6 @@ class StimulusIntegrator(object):
         out = timeseries.copy()
         out.set_timecourses(integrated)
         return out
-
-
 
 
 def common_substr(data):

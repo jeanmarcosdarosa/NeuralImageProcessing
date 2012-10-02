@@ -4,7 +4,8 @@ Created on 18.02.2011
 @author: jan
 '''
 
-
+import tempfile
+import os
 import numpy as np
 from matplotlib import collections
 import pylab as plt
@@ -124,9 +125,13 @@ class VisualizeTimeseries(object):
         self.imshow(axtemp, bg, **bgargs)
         self.overlay_image(axtemp, im, **imargs)
         axtemp.set_axis_off()
-        fig.savefig('/home/jan/Downloads/temp.png', transparent=True, bbox_inches='tight', pad_inches=0)
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            fig.savefig(f, transparent=True, bbox_inches='tight',
+                        format='png', pad_inches=0)
+            bitmap_name = f.name
         plt.close(111)
-        new_im = plt.imread('/home/jan/Downloads/temp.png')
+        new_im = plt.imread(bitmap_name)
+        os.remove(bitmap_name)
         self.imshow(ax, new_im, **endargs)
         
         

@@ -113,7 +113,8 @@ class sICA():
     def __call__(self, timeseries):
 
         self.pca = sld.PCA(n_components=self.variance)
-
+        self.obj = self.pca.explained_variance_ratio_
+        
         if self.latent_series:
             base = self.pca.fit_transform(timeseries.base.timecourses.T)
             time = np.dot(self.pca.components_, timeseries.timecourses.T)

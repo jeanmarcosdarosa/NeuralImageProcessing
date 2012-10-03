@@ -53,6 +53,47 @@ class VisualizeTimeseries(object):
         self.axes['base'].reverse()
         self.axes['time'].reverse()
 
+    def base_and_singlestimtime(self, num_objects, stimlabels, height=0.9, aspect=False):
+        ''' generate figure layout with base on timeaxes for each individual stimulus
+        axes['time'] is than a list of dictionarys where each stimuluslabel is the key
+        to the correspoding axes '''
+        
+        
+        totaltime_width = 0.7
+        axspacing = 0.01
+        
+        if not(self.fig):
+            self.fig = plt.figure(figsize=(20, 13))
+
+        height = height / num_objects
+        if aspect:
+            figheight = self.fig.get_figheight()
+            figwidth = self.fig.get_figwidth()
+            figaspect = figwidth / figheight
+            aspect = aspect * figaspect
+        else:
+            aspect = 1
+        
+        
+        timewidth = totaltime_width / len(stimlabels)
+        for i in range(num_objects):
+            lab2ax = {}
+            for lab_idx, lab in enumerate(stimlabels):
+                #create timeaxes
+                ax = self.fig.add_axes([0.25 + timewidth * lab_idx, height * i + 0.05, timewidth - axspacing,
+                                         min(height - 0.01, 0.19 * aspect)])
+                ax.set_xticklabels([])
+                lab2ax[lab] = ax
+            self.axes['time'].append(lab2ax)
+            #create baseaxes
+            ax = self.fig.add_axes([0.05, height * i + 0.05, min(height, 0.2) - 0.01, min(height - 0.01, 0.19 * aspect)])
+            ax.set_axis_off()
+            ax.set_gid(num_objects - 1 - i)
+            self.axes['base'].append(ax)
+        # bring plots in order as you would expect from subplot
+        self.axes['base'].reverse()
+        self.axes['time'].reverse()
+
     def subplot(self, num_objects, dim2=None):
         if not(self.fig):
             self.fig = plt.figure(figsize=(8, 8))

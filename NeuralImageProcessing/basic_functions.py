@@ -114,7 +114,7 @@ class sICA():
 
         self.pca = sld.PCA(n_components=self.variance)
         self.obj = self.pca.explained_variance_ratio_
-        
+
         if self.latent_series:
             base = self.pca.fit_transform(timeseries.base.timecourses.T)
             time = np.dot(self.pca.components_, timeseries.timecourses.T)
@@ -156,6 +156,7 @@ class sICA():
                               label_sample=out.label_objects)
         if self.latent_series:
             out.base.shape = timeseries.base.shape
+        out.reconstruction_error = self.obj
         return out
 
 class stICA():
@@ -221,6 +222,7 @@ class NNMA():
         out.name += '_nnma'
         out.base = TimeSeries(base, shape=timeseries.shape, name=out.name,
                               label_sample=out.label_objects)
+        out.reconstruction_error = self.obj
         return out
 
 class SampleSimilarity():

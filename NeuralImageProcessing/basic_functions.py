@@ -533,9 +533,11 @@ class StimulusIntegrator(object):
         or set the window parameter to a tuple
         --> integrate only from window[0] to window[1]
     """
-    def __init__(self, threshold=0, window=None):
+    def __init__(self,method='mean', threshold=0, window=None):
+        methods = {'mean': np.mean, 'max': np.max}
         self.threshold = threshold
         self.window = window
+        self.method = methods[method]
 
     def __call__(self, timeseries):
         trial_shaped = timeseries.trial_shaped()
@@ -548,7 +550,7 @@ class StimulusIntegrator(object):
                     trial = trial_shaped[i_trial, self.window[0]:self.window[1], i_mode]
                 else:
                     trial = trial_shaped[i_trial, :, i_mode]
-                integrated[i_trial, i_mode] = np.mean(trial[trial > self.threshold])
+                integrated[i_trial, i_mode] = self.method(trial[trial > self.threshold])
         out = timeseries.copy()
         out.set_timecourses(integrated)
         return out

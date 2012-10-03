@@ -529,9 +529,13 @@ class SampleConcat():
         return out
 
 class StimulusIntegrator(object):
-    """calculate mean of all values within a stimulus that are above a certain threshold"""
-    def __init__(self, threshold=0):
+    """calculate mean of all values within a stimulus that are above a certain threshold
+        or set the window parameter to a tuple
+        --> integrate only from window[0] to window[1]
+    """
+    def __init__(self, threshold=0, window=None):
         self.threshold = threshold
+        self.window = window
 
     def __call__(self, timeseries):
         trial_shaped = timeseries.trial_shaped()
@@ -540,7 +544,10 @@ class StimulusIntegrator(object):
         integrated = np.zeros((n_trials, n_modes))
         for i_mode in range(n_modes):
             for i_trial in range(n_trials):
-                trial = trial_shaped[i_trial, :, i_mode]
+                if self.window:
+                    trial = trial_shaped[i_trial, self.window[0]:self.window[1], i_mode]
+                else:
+                    trial = trial_shaped[i_trial, :, i_mode]
                 integrated[i_trial, i_mode] = np.mean(trial[trial > self.threshold])
         out = timeseries.copy()
         out.set_timecourses(integrated)

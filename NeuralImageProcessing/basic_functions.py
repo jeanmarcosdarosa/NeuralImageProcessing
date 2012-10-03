@@ -113,7 +113,6 @@ class sICA():
     def __call__(self, timeseries):
 
         self.pca = sld.PCA(n_components=self.variance)
-        self.obj = self.pca.explained_variance_ratio_
 
         if self.latent_series:
             base = self.pca.fit_transform(timeseries.base.timecourses.T)
@@ -124,7 +123,7 @@ class sICA():
             except np.linalg.LinAlgError:
                 return 'Error'
             time = self.pca.components_
-
+        self.obj = float(np.sum(self.pca.explained_variance_ratio_))
 
         normed_base = base / np.sqrt(self.pca.explained_variance_)
         normed_time = time * np.sqrt(self.pca.explained_variance_.reshape((-1, 1)))

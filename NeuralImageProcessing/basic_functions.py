@@ -472,9 +472,10 @@ class ObjectConcat():
         out.label_objects = label_objects
         if self.unequalsample:
             out.label_sample = sum([[tmp] * self.unequalsample for tmp in common], [])
-            out.shape = (np.sum([ts.num_objects for ts in timeserieses]),)
         if self.unequalobj:
             out.shape = [ts.shape for ts in timeserieses]
+        else:
+            out.shape = (np.sum([ts.num_objects for ts in timeserieses]),)
         return out
 
 class ObjectScrambledConcat():
@@ -533,7 +534,7 @@ class StimulusIntegrator(object):
         or set the window parameter to a tuple
         --> integrate only from window[0] to window[1]
     """
-    def __init__(self,method='mean', threshold=0, window=None):
+    def __init__(self, method='mean', threshold=0, window=None):
         methods = {'mean': np.mean, 'max': np.max}
         self.threshold = threshold
         self.window = window

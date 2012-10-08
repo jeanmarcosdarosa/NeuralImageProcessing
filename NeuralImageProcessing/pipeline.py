@@ -154,6 +154,10 @@ class TimeSeries(object):
     def trial_shaped2D(self):
         return self.timecourses.reshape(len(self.label_sample), -1, *self.shape)
 
+    def matrix_shaped(self):
+        """guarantee to return timecourses as 2D array"""
+        return self.timecourses.reshape((-1, self.num_objects))
+
     def as_dict(self, aggregate=None):
         if aggregate == 'objects':
             outdict = zip(self.label_objects, self.timecourses.T)
